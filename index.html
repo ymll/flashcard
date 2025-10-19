@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Flashcards</title>
+    <title>📚 Random Flashcards</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -66,9 +66,12 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-    <!-- HOME BUTTON (Fixed top-left) -->
-    <button id="home-button" class="fixed top-4 left-4 z-40 px-4 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
-        🏠 Home
+    <!-- HOME BUTTON (Fixed top-left, circle, icon-only) -->
+    <button id="home-button" class="fixed top-4 left-4 z-40 w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+        <!-- SVG Home Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.155-.439 1.595 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125h4.5v-6h3v6h4.5c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21.75h7.5" />
+        </svg>
     </button>
     
     <!-- FONT SIZE CONTROLS (Fixed top-right) -->
@@ -83,13 +86,14 @@
 
     <!-- Card Display Area -->
     <main id="app-container" class="w-full max-w-xl flex flex-col items-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 tracking-tight">Random Flashcard Review</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 tracking-tight">Welcome! Ready to learn?</h1>
 
         <!-- Flashcard Component -->
         <div id="flashcard-wrapper" class="flashcard w-full h-80 rounded-3xl perspective-1000">
             <div id="flashcard-inner" class="flashcard-inner">
                 <div id="flashcard-front" class="flashcard-front">
                     <!-- Note: Font size controlled by JavaScript -->
+                    <!-- Content uses innerHTML now to support the <br> tag -->
                     <p class="font-extrabold text-indigo-600 transition duration-300">
                         Click START or EDIT to begin!
                     </p>
@@ -178,8 +182,8 @@
             { term: '生氣', definition: '😡' },
             { term: '害怕', definition: '😨' },
             { term: '高興', definition: '😄' },
-            { term: '傷心', definition: '😭' },
-            { term: '興奮', definition: '🥳' }
+            { term: '期待', definition: '🤩' },
+            { term: '失望', definition: '😞' }
         ];
 
         // --- DOM ELEMENTS ---
@@ -194,6 +198,7 @@
         const progressIndicator = document.getElementById('progress-indicator');
         const startButton = document.getElementById('start-button');
         const editButton = document.getElementById('edit-button');
+        const shareButton = document.getElementById('share-button');
         const tryAgainButton = document.getElementById('try-again-button');
         const startOverButton = document.getElementById('start-over-button'); 
         const editModal = document.getElementById('edit-modal');
@@ -297,8 +302,8 @@
             currentCardIndex = -1;
             isFlipped = false;
 
-            // Set initial card content
-            flashcardFront.textContent = `Welcome! Ready to learn. (${cards.length} cards loaded)`;
+            // Set initial card content, using innerHTML for the line break
+            flashcardFront.innerHTML = `Click to start <br> (${cards.length} cards loaded)`;
             flashcardFront.classList.add('text-indigo-600');
             flashcardFront.classList.remove('text-red-500');
             flashcardBack.textContent = 'Definition text here...';
@@ -306,7 +311,7 @@
 
         function startReview() {
             if (cards.length === 0) {
-                flashcardFront.textContent = 'Please add cards in the Edit Cards menu.';
+                flashcardFront.innerHTML = 'Please add cards in the <br> Edit Cards menu.';
                 flashcardFront.classList.remove('text-indigo-600');
                 flashcardFront.classList.add('text-red-500');
                 controls.classList.remove('hidden');
@@ -360,6 +365,8 @@
          */
         function handleCardClick() {
             if (currentCardIndex === -1) {
+                // If in launch state, click to start review.
+                startReview();
                 return;
             }
 
