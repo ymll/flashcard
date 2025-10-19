@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Flashcards</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for aesthetic */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Rainbow Gradient Background (subtle and animated) */
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0f7fa 25%, #fffde7 50%, #fbe9e7 75%, #f3e5f5 100%);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .flashcard {
+            min-height: 20rem; 
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .flashcard-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            background-color: white;
+            /* Ensure text scales within the card */
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        .flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        /* Mobile-friendly adjustments */
+        @media (max-width: 640px) {
+            .flashcard {
+                min-height: 15rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+    <!-- HOME BUTTON (Fixed top-left) -->
+    <button id="home-button" class="fixed top-4 left-4 z-40 px-4 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+        🏠 Home
+    </button>
+    
+    <!-- FONT SIZE CONTROLS (Fixed top-right) -->
+    <div id="font-controls" class="fixed top-4 right-4 z-40 flex space-x-2">
+        <button id="font-smaller-button" class="px-3 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+            A-
+        </button>
+        <button id="font-larger-button" class="px-3 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+            A+
+        </button>
+    </div>
+
+    <!-- Card Display Area -->
+    <main id="app-container" class="w-full max-w-xl flex flex-col items-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 tracking-tight">Random Flashcard Review</h1>
+
+        <!-- Flashcard Component -->
+        <div id="flashcard-wrapper" class="flashcard w-full h-80 rounded-3xl perspective-1000">
+            <div id="flashcard-inner" class="flashcard-inner">
+                <div id="flashcard-front" class="flashcard-front">
+                    <!-- Note: Font size controlled by JavaScript -->
+                    <p class="font-extrabold text-indigo-600 transition duration-300">
+                        Click START or EDIT to begin!
+                    </p>
+                </div>
+                <div id="flashcard-back" class="flashcard-back bg-indigo-50">
+                    <!-- Note: Font size controlled by JavaScript -->
+                    <p class="text-gray-700 transition duration-300">
+                        Definition text here...
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div id="controls" class="mt-8 flex space-x-4">
+            <button id="start-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition duration-200 transform hover:scale-105">
+                Start Review
+            </button>
+            <button id="edit-button" class="px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl shadow-md hover:bg-gray-300 transition duration-200 transform hover:scale-105">
+                Edit Cards
+            </button>
+        </div>
+
+        <!-- Progress Indicator / Message Box -->
+        <p id="progress-indicator" class="mt-4 text-sm text-gray-500 opacity-0 transition duration-300">
+            Card 0 of 0
+        </p>
+    </main>
+
+    <!-- Completion Screen (Hidden by default) -->
+    <div id="completion-screen" class="hidden text-center p-8 bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div class="text-6xl mb-4" role="img" aria-label="Celebration">🎉</div>
+        <h2 class="text-4xl font-extrabold text-indigo-600 mb-3">Great Job!</h2>
+        <p class="text-xl text-gray-700 mb-8">You successfully reviewed all the cards.</p>
+        
+        <!-- Updated button layout for the completion screen -->
+        <div class="flex flex-col space-y-4">
+            <button id="try-again-button" class="px-8 py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition duration-200 transform hover:scale-105">
+                Try Again
+            </button>
+            <button id="start-over-button" class="px-8 py-4 bg-gray-200 text-gray-800 font-bold rounded-xl shadow-lg hover:bg-gray-300 transition duration-200 transform hover:scale-105">
+                Edit Cards
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Modal (Hidden by default) -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Edit Flashcards (Term | Definition)</h2>
+            <p class="text-sm text-gray-500 mb-4">
+                Enter one flashcard per line, separating the **Term (Question on the front page)** and **Definition (Answer on the back page)** with a single vertical pipe `|`.
+            </p>
+            <textarea id="edit-textarea" class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 text-base" placeholder="Example: 生氣 | 😡"></textarea>
+            <div class="mt-4 flex justify-end space-x-3">
+                <button id="save-button" class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition duration-200">
+                    Save Cards
+                </button>
+                <button id="cancel-button" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition duration-200">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS AND STATE ---
+        const STORAGE_KEY = 'simpleFlashcards';
+        const FONT_SIZE_KEY = 'flashcardFontSize'; 
+        const CARD_TRANSITION_TIME_MS = 650;
+        
+        // Font size control constants
+        const BASE_FONT_SIZE_PX = 36;
+        const DEFINITION_OFFSET_PX = 8;
+        const FONT_STEP_PX = 4;
+        const MIN_FONT_SIZE_PX = 24;
+        const MAX_FONT_SIZE_PX = 60;
+        
+        let cards = [];
+        let shuffledIndices = [];
+        let currentCardIndex = -1;
+        let isFlipped = false;
+        let currentTermFontSize = BASE_FONT_SIZE_PX; 
+
+        const DEFAULT_CARDS = [
+            { term: '生氣', definition: '😡' },
+            { term: '害怕', definition: '😨' },
+            { term: '高興', definition: '😄' },
+            { term: '傷心', definition: '😭' },
+            { term: '興奮', definition: '🥳' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const homeButton = document.getElementById('home-button');
+        const fontSmallerButton = document.getElementById('font-smaller-button');
+        const fontLargerButton = document.getElementById('font-larger-button');
+        const appContainer = document.getElementById('app-container');
+        const completionScreen = document.getElementById('completion-screen');
+        const flashcardWrapper = document.getElementById('flashcard-wrapper');
+        const flashcardFront = document.getElementById('flashcard-front').querySelector('p');
+        const flashcardBack = document.getElementById('flashcard-back').querySelector('p');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const startButton = document.getElementById('start-button');
+        const editButton = document.getElementById('edit-button');
+        const tryAgainButton = document.getElementById('try-again-button');
+        const startOverButton = document.getElementById('start-over-button'); 
+        const editModal = document.getElementById('edit-modal');
+        const editTextArea = document.getElementById('edit-textarea');
+        const saveButton = document.getElementById('save-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const controls = document.getElementById('controls');
+
+
+        // --- STORAGE AND INITIALIZATION ---
+
+        function loadCards() {
+            try {
+                const storedCards = localStorage.getItem(STORAGE_KEY);
+                cards = storedCards ? JSON.parse(storedCards) : DEFAULT_CARDS;
+                if (!Array.isArray(cards) || cards.length === 0) {
+                    cards = DEFAULT_CARDS;
+                }
+            } catch (error) {
+                console.error('Error loading cards from localStorage, using defaults:', error);
+                cards = DEFAULT_CARDS;
+            }
+        }
+        
+        function saveCards() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+            } catch (error) {
+                console.error('Error saving cards to localStorage:', error);
+            }
+        }
+
+        // --- FONT SIZE LOGIC ---
+
+        function loadFontSize() {
+            try {
+                const storedSize = localStorage.getItem(FONT_SIZE_KEY);
+                currentTermFontSize = storedSize ? parseInt(storedSize) : BASE_FONT_SIZE_PX;
+            } catch (e) {
+                console.error('Could not load font size, using default.', e);
+                currentTermFontSize = BASE_FONT_SIZE_PX;
+            }
+            applyFontSize();
+        }
+
+        function applyFontSize() {
+            // Ensure font size is within limits
+            currentTermFontSize = Math.max(MIN_FONT_SIZE_PX, Math.min(MAX_FONT_SIZE_PX, currentTermFontSize));
+
+            const definitionSize = Math.max(MIN_FONT_SIZE_PX - DEFINITION_OFFSET_PX, currentTermFontSize - DEFINITION_OFFSET_PX);
+            
+            // Apply inline style to the paragraph elements inside the card
+            flashcardFront.style.fontSize = `${currentTermFontSize}px`;
+            flashcardBack.style.fontSize = `${definitionSize}px`;
+
+            // Save for persistence
+            localStorage.setItem(FONT_SIZE_KEY, currentTermFontSize);
+            
+            // Update button states (disable/style when limits are reached)
+            fontSmallerButton.disabled = currentTermFontSize <= MIN_FONT_SIZE_PX;
+            fontLargerButton.disabled = currentTermFontSize >= MAX_FONT_SIZE_PX;
+            
+            fontSmallerButton.classList.toggle('opacity-50', fontSmallerButton.disabled);
+            fontLargerButton.classList.toggle('opacity-50', fontLargerButton.disabled);
+        }
+
+        function increaseFontSize() {
+            currentTermFontSize += FONT_STEP_PX;
+            applyFontSize();
+        }
+
+        function decreaseFontSize() {
+            currentTermFontSize -= FONT_STEP_PX;
+            applyFontSize();
+        }
+
+        /**
+         * The Fisher-Yates (Knuth) Shuffle algorithm.
+         */
+        function shuffle(length) {
+            const indices = Array.from({ length }, (_, i) => i);
+            for (let i = length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            return indices;
+        }
+
+        // --- GAME LOGIC ---
+
+        /**
+         * Resets the UI to the initial launch state (before review starts).
+         */
+        function resetToLaunchState() {
+            completionScreen.classList.add('hidden');
+            editModal.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            controls.classList.remove('hidden');
+            progressIndicator.classList.add('opacity-0');
+            flashcardWrapper.classList.remove('flipped');
+            currentCardIndex = -1;
+            isFlipped = false;
+
+            // Set initial card content
+            flashcardFront.textContent = `Welcome! Ready to learn. (${cards.length} cards loaded)`;
+            flashcardFront.classList.add('text-indigo-600');
+            flashcardFront.classList.remove('text-red-500');
+            flashcardBack.textContent = 'Definition text here...';
+        }
+
+        function startReview() {
+            if (cards.length === 0) {
+                flashcardFront.textContent = 'Please add cards in the Edit Cards menu.';
+                flashcardFront.classList.remove('text-indigo-600');
+                flashcardFront.classList.add('text-red-500');
+                controls.classList.remove('hidden');
+                return;
+            }
+
+            // Reset state
+            shuffledIndices = shuffle(cards.length);
+            currentCardIndex = 0;
+            isFlipped = false;
+
+            // Update UI visibility
+            completionScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            controls.classList.add('hidden');
+            progressIndicator.classList.remove('opacity-0');
+            progressIndicator.classList.remove('text-red-500'); // Clear any error messages
+
+            // Show first card
+            displayCurrentCard();
+        }
+
+        /**
+         * Displays the current card based on the shuffled index.
+         */
+        function displayCurrentCard() {
+            const actualIndex = shuffledIndices[currentCardIndex];
+            const card = cards[actualIndex];
+
+            // 1. CLEAR CONTENT AND RESET FLIP STATE INSTANTLY (Flicker Fix)
+            flashcardBack.textContent = ''; 
+            flashcardWrapper.classList.remove('flipped');
+            isFlipped = false;
+
+            // 2. Set front content instantly
+            flashcardFront.textContent = card.term;
+            
+            // 3. Update definition only AFTER the card has fully rotated back to the front face.
+            setTimeout(() => {
+                 flashcardBack.textContent = card.definition;
+            }, CARD_TRANSITION_TIME_MS); 
+
+            // Update progress
+            progressIndicator.textContent = `Card ${currentCardIndex + 1} of ${cards.length}`;
+            progressIndicator.classList.remove('text-red-500');
+            progressIndicator.classList.add('text-gray-500');
+        }
+
+        /**
+         * Handles the main click action on the card.
+         */
+        function handleCardClick() {
+            if (currentCardIndex === -1) {
+                return;
+            }
+
+            if (!isFlipped) {
+                // 1. Flip the card to show definition
+                flashcardWrapper.classList.add('flipped');
+                isFlipped = true;
+            } else {
+                // 2. Advance to the next card
+                currentCardIndex++;
+                if (currentCardIndex < cards.length) {
+                    // Show next card
+                    displayCurrentCard();
+                } else {
+                    // Review is complete
+                    showCompletionScreen();
+                }
+            }
+        }
+
+        /**
+         * Shows the completion message and resets UI state.
+         */
+        function showCompletionScreen() {
+            appContainer.classList.add('hidden');
+            completionScreen.classList.remove('hidden');
+            currentCardIndex = -1; // Indicate game over
+        }
+
+        // --- EDITING LOGIC ---
+
+        /**
+         * Utility function to display a temporary message/error using the progress indicator.
+         */
+        function displayMessage(text, isError = false) {
+            progressIndicator.textContent = text;
+            progressIndicator.classList.remove('opacity-0', 'text-gray-500', 'text-red-500');
+            progressIndicator.classList.add(isError ? 'text-red-500' : 'text-gray-500');
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                progressIndicator.classList.add('opacity-0');
+            }, 5000);
+        }
+
+        /**
+         * Opens the editing modal and populates the textarea.
+         */
+        function openEditModal() {
+            const textContent = cards.map(c => `${c.term} | ${c.definition}`).join('\n');
+            editTextArea.value = textContent;
+            editModal.classList.remove('hidden');
+        }
+
+        /**
+         * Closes the editing modal.
+         */
+        function closeEditModal() {
+            editModal.classList.add('hidden');
+        }
+
+        /**
+         * Saves the cards from the textarea.
+         */
+        function handleSaveCards() {
+            const rawText = editTextArea.value.trim();
+            const lines = rawText.split('\n').filter(line => line.trim() !== '');
+
+            const newCards = [];
+            let errorCount = 0;
+
+            lines.forEach(line => {
+                // Split only on the first pipe
+                const parts = line.split(/\|(.*)/s).map(p => p.trim());
+                if (parts.length >= 2 && parts[0]) { 
+                    newCards.push({ term: parts[0], definition: parts[1] || '' });
+                } else {
+                    errorCount++;
+                    console.warn(`Skipping invalid line: "${line}"`);
+                }
+            });
+
+            if (newCards.length > 0) {
+                cards = newCards;
+                saveCards();
+                closeEditModal();
+                
+                // Reset to launch state and show confirmation message
+                resetToLaunchState(); 
+                
+                if (errorCount > 0) {
+                    displayMessage(`${errorCount} line(s) were invalid and skipped.`, true);
+                } else {
+                    displayMessage(`Successfully loaded ${cards.length} cards.`, false);
+                }
+
+            } else {
+                displayMessage('You must enter at least one valid flashcard (Term | Definition).', true);
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+
+        // Home button returns to launch state
+        homeButton.addEventListener('click', resetToLaunchState);
+
+        // Font size controls
+        fontSmallerButton.addEventListener('click', decreaseFontSize);
+        fontLargerButton.addEventListener('click', increaseFontSize);
+
+        // Start/Try Again buttons
+        startButton.addEventListener('click', startReview);
+        tryAgainButton.addEventListener('click', startReview);
+        
+        // Edit Cards buttons (main page and completion page)
+        editButton.addEventListener('click', openEditModal);
+        startOverButton.addEventListener('click', () => { // "Edit Cards" on completion screen
+            completionScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            controls.classList.remove('hidden');
+            openEditModal();
+        });
+
+
+        // Card navigation (Click anywhere on the card container)
+        flashcardWrapper.addEventListener('click', handleCardClick);
+
+        // Edit Modal controls
+        cancelButton.addEventListener('click', closeEditModal);
+        saveButton.addEventListener('click', handleSaveCards);
+
+
+        // --- INITIAL SETUP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCards();
+            loadFontSize(); // Load and apply font size preference
+            resetToLaunchState(); // Ensure the app starts in the correct state
+        });
+
+    </script>
+</body>
+</html>
