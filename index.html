@@ -66,11 +66,10 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-    <!-- HOME BUTTON (Fixed top-left, circle, icon-only) -->
+    <!-- HOME BUTTON (Fixed top-left, circle, icon-only) - UPDATED WITH SVG -->
     <button id="home-button" class="fixed top-4 left-4 z-40 w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
-        <!-- SVG Home Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.155-.439 1.595 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125h4.5v-6h3v6h4.5c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21.75h7.5" />
+        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="currentColor">
+            <path d="M 24.960938 2.1015625 A 1.0001 1.0001 0 0 0 24.386719 2.3105469 L 1.3867188 20.210938 A 1.0001 1.0001 0 1 0 2.6132812 21.789062 L 4 20.708984 L 4 48 A 1.0001 1.0001 0 0 0 5 49 L 18.832031 49 A 1.0001 1.0001 0 0 0 19.158203 49 L 30.832031 49 A 1.0001 1.0001 0 0 0 31.158203 49 L 45 49 A 1.0001 1.0001 0 0 0 46 48 L 46 20.708984 L 47.386719 21.789062 A 1.0001 1.0001 0 1 0 48.613281 20.210938 L 25.613281 2.3105469 A 1.0001 1.0001 0 0 0 24.960938 2.1015625 z M 25 4.3671875 L 44 19.154297 L 44 47 L 32 47 L 32 29 A 1.0001 1.0001 0 0 0 31 28 L 19 28 A 1.0001 1.0001 0 0 0 18 29 L 18 47 L 6 47 L 6 19.154297 L 25 4.3671875 z M 20 30 L 30 30 L 30 47 L 20 47 L 20 30 z"></path>
         </svg>
     </button>
     
@@ -92,14 +91,11 @@
         <div id="flashcard-wrapper" class="flashcard w-full h-80 rounded-3xl perspective-1000">
             <div id="flashcard-inner" class="flashcard-inner">
                 <div id="flashcard-front" class="flashcard-front">
-                    <!-- Note: Font size controlled by JavaScript -->
-                    <!-- Content uses innerHTML now to support the <br> tag -->
                     <p class="font-extrabold text-indigo-600 transition duration-300">
                         Click START or EDIT to begin!
                     </p>
                 </div>
                 <div id="flashcard-back" class="flashcard-back bg-indigo-50">
-                    <!-- Note: Font size controlled by JavaScript -->
                     <p class="text-gray-700 transition duration-300">
                         Definition text here...
                     </p>
@@ -145,7 +141,7 @@
         <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Edit Flashcards (Term | Definition)</h2>
             <p class="text-sm text-gray-500 mb-4">
-                Enter one flashcard per line, separating the **Term (Question on the front page)** and **Definition (Answer on the back page)** with a single vertical pipe `|`.
+                Enter one flashcard per line, separating the **Front Page** and **Back Page** of the flashcard with a single vertical pipe `|`.
             </p>
             <textarea id="edit-textarea" class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 text-base" placeholder="Example: 生氣 | 😡"></textarea>
             <div class="mt-4 flex justify-end space-x-3">
@@ -158,6 +154,13 @@
             </div>
         </div>
     </div>
+
+    <!-- SHARE BUTTON (Fixed bottom-right, circle, icon-only) - UPDATED WITH SVG -->
+    <button id="share-button" class="fixed bottom-6 right-6 z-40 w-14 h-14 flex items-center justify-center bg-indigo-600 text-white rounded-full shadow-xl hover:bg-indigo-700 transition duration-200 transform hover:scale-110">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" enable-background="new 0 0 50 50">
+            <path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z"/><path d="M24 7h2v21h-2z"/><path d="M35 40H15c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3h7v2h-7c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1h20c.6 0 1-.4 1-1V19c0-.6-.4-1-1-1h-7v-2h7c1.7 0 3 1.3 3 3v18c0 1.7-1.3 3-3 3z"/>
+        </svg>
+    </button>
 
     <script>
         // --- CONSTANTS AND STATE ---
@@ -208,9 +211,121 @@
         const controls = document.getElementById('controls');
 
 
+        // --- URL SHARING LOGIC (UTF-8 SAFE) ---
+
+        /**
+         * Converts a string to Base64 using a UTF-8 safe pipeline.
+         */
+        function utf8_to_b64(str) {
+            // Encode the string as URI components, then convert to Latin-1
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                function(match, p1) {
+                    return String.fromCharCode('0x' + p1);
+                })
+            );
+        }
+
+        /**
+         * Decodes a Base64 string back to a UTF-8 string.
+         */
+        function b64_to_utf8(str) {
+            try {
+                 return decodeURIComponent(atob(str).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch(e) {
+                console.error("B64 decoding failed:", e);
+                return "";
+            }
+        }
+
+
+        /**
+         * Converts the current cards array into a Base64-encoded URL-safe string.
+         */
+        function encodeCards(cards) {
+            // 1. Convert card objects to the "Term|Definition" string array format
+            const cardStrings = cards.map(c => `${c.term}|${c.definition}`);
+            // 2. Base64 encode the stringified array using the UTF-8 safe function
+            const jsonString = JSON.stringify(cardStrings);
+            return utf8_to_b64(jsonString); 
+        }
+
+        /**
+         * Decodes a Base64 string from the URL back into a cards array.
+         */
+        function decodeCards(encodedData) {
+            try {
+                if (!encodedData) return [];
+                // 1. Base64 decode using the UTF-8 safe function
+                const jsonString = b64_to_utf8(encodedData);
+                if (!jsonString) return [];
+                
+                // 2. Parse the array of strings
+                const cardStrings = JSON.parse(jsonString);
+                
+                const decodedCards = [];
+                cardStrings.forEach(line => {
+                    // Split only on the first pipe
+                    const parts = line.split(/\|(.*)/s).map(p => p.trim());
+                    if (parts.length >= 2 && parts[0]) { 
+                        decodedCards.push({ term: parts[0], definition: parts[1] || '' });
+                    }
+                });
+                
+                return decodedCards;
+
+            } catch (e) {
+                console.error('Failed to decode cards from URL:', e);
+                return [];
+            }
+        }
+        
+        /**
+         * Checks the URL for a shared list and loads it.
+         * Returns true if cards were loaded from the URL, false otherwise.
+         */
+        function loadCardsFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+            
+            if (encodedData) {
+                const decoded = decodeCards(encodedData);
+                if (decoded.length > 0) {
+                    cards = decoded;
+                    
+                    // Clean the URL by removing the 'data' parameter to prevent accidental refresh loops
+                    const cleanUrl = new URL(window.location.href.split('?')[0]); 
+                    window.history.replaceState({}, document.title, cleanUrl.pathname);
+                    
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Generates the complete shareable URL with the current card data encoded.
+         */
+        function getShareableUrl() {
+            const encodedData = encodeCards(cards);
+            // Use base URL without existing params before adding 'data'
+            const url = new URL(window.location.href.split('?')[0]); 
+            url.searchParams.set('data', encodedData);
+            return url.href;
+        }
+
         // --- STORAGE AND INITIALIZATION ---
 
         function loadCards() {
+            // 1. Attempt to load cards from the URL (highest priority for sharing)
+            if (loadCardsFromUrl()) {
+                // If loaded from URL, we also save to localStorage to persist the shared list
+                saveCards();
+                return;
+            }
+            
+            // 2. Fallback to localStorage
             try {
                 const storedCards = localStorage.getItem(STORAGE_KEY);
                 cards = storedCards ? JSON.parse(storedCards) : DEFAULT_CARDS;
@@ -346,7 +461,7 @@
             flashcardWrapper.classList.remove('flipped');
             isFlipped = false;
 
-            // 2. Set front content instantly
+            // 2. Set front content instantly (using textContent for review cards)
             flashcardFront.textContent = card.term;
             
             // 3. Update definition only AFTER the card has fully rotated back to the front face.
@@ -395,6 +510,52 @@
             completionScreen.classList.remove('hidden');
             currentCardIndex = -1; // Indicate game over
         }
+        
+        /**
+         * Copies the shareable URL to the clipboard and shows a message.
+         */
+        function handleShare() {
+            if (cards.length === 0) {
+                displayMessage('Cannot share an empty list. Please add cards first.', true);
+                return;
+            }
+            
+            const shareUrl = getShareableUrl();
+            
+            // Robust clipboard logic
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    displayMessage('Share link copied to clipboard!', false);
+                }).catch(() => {
+                    // Fallback if permission is denied
+                    copyToClipboardFallback(shareUrl);
+                });
+            } else {
+                // Fallback for non-secure contexts (like some iframe environments)
+                copyToClipboardFallback(shareUrl);
+            }
+        }
+        
+        /**
+         * Fallback function to copy text to clipboard using document.execCommand('copy').
+         */
+        function copyToClipboardFallback(text) {
+            const dummy = document.createElement('textarea');
+            dummy.style.position = 'fixed'; // Make sure it's not visible
+            dummy.style.opacity = '0';
+            dummy.value = text;
+            document.body.appendChild(dummy);
+            dummy.select();
+            try {
+                document.execCommand('copy');
+                displayMessage('Share link copied to clipboard!', false);
+            } catch (err) {
+                // Final error message if fallback also fails
+                displayMessage('Failed to copy link.', true);
+                console.error("Share URL:", text);
+            }
+            document.body.removeChild(dummy);
+        }
 
         // --- EDITING LOGIC ---
 
@@ -405,6 +566,9 @@
             progressIndicator.textContent = text;
             progressIndicator.classList.remove('opacity-0', 'text-gray-500', 'text-red-500');
             progressIndicator.classList.add(isError ? 'text-red-500' : 'text-gray-500');
+            // Show message immediately
+            progressIndicator.classList.remove('opacity-0'); 
+            
             // Hide message after 5 seconds
             setTimeout(() => {
                 progressIndicator.classList.add('opacity-0');
@@ -489,6 +653,9 @@
             controls.classList.remove('hidden');
             openEditModal();
         });
+
+        // Share Button
+        shareButton.addEventListener('click', handleShare);
 
 
         // Card navigation (Click anywhere on the card container)
