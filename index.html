@@ -3,18 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 Random Flashcards</title>
+    <title id="page-title">📚 Random Flashcards</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for aesthetic */
         body {
             font-family: 'Inter', sans-serif;
-            /* Rainbow Gradient Background (subtle and animated) */
-            background: linear-gradient(135deg, #f0f4ff 0%, #e0f7fa 25%, #fffde7 50%, #fbe9e7 75%, #f3e5f5 100%);
             background-size: 400% 400%;
             animation: gradient-shift 15s ease infinite;
+            transition: background 0.5s, background-color 0.5s ease;
         }
+
+        /* --- THEME SPECIFIC BACKGROUNDS --- */
+
+        /* Professional Theme (Default, Light Gradient) */
+        .theme-pro {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0f7fa 25%, #fffde7 50%, #fbe9e7 75%, #f3e5f5 100%);
+        }
+        /* Vibrant Kid Theme (Playful Dots) */
+        .theme-kid {
+            background-color: #f0fdf4; /* Light Mint Green */
+            background-image: radial-gradient(#dcfce7 10%, transparent 10%), radial-gradient(#dcfce7 10%, transparent 10%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+        /* Dark Theme */
+        .theme-dark {
+            background-color: #1a1a2e; /* Deep Navy/Indigo */
+        }
+        /* High Contrast (B&W) Theme */
+        .theme-bw {
+            background-color: #ffffff;
+        }
+        /* Rainbow Theme (Vibrant Gradient) */
+        .theme-rainbow {
+            background: linear-gradient(45deg, #fee2e2, #fbcfe8, #a5b4fc, #bae6fd, #a7f3d0);
+            background-size: 400% 400%;
+        }
+
+
         @keyframes gradient-shift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -45,7 +73,6 @@
             justify-content: center;
             padding: 1.5rem;
             border-radius: 1.5rem;
-            background-color: white;
             /* Ensure text scales within the card */
             overflow-wrap: break-word;
             word-break: break-word;
@@ -64,108 +91,114 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative theme-pro">
 
-    <!-- HOME BUTTON (Fixed top-left, circle, icon-only) - UPDATED WITH SVG -->
-    <button id="home-button" class="fixed top-4 left-4 z-40 w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
-        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="currentColor">
-            <path d="M 24.960938 2.1015625 A 1.0001 1.0001 0 0 0 24.386719 2.3105469 L 1.3867188 20.210938 A 1.0001 1.0001 0 1 0 2.6132812 21.789062 L 4 20.708984 L 4 48 A 1.0001 1.0001 0 0 0 5 49 L 18.832031 49 A 1.0001 1.0001 0 0 0 19.158203 49 L 30.832031 49 A 1.0001 1.0001 0 0 0 31.158203 49 L 45 49 A 1.0001 1.0001 0 0 0 46 48 L 46 20.708984 L 47.386719 21.789062 A 1.0001 1.0001 0 1 0 48.613281 20.210938 L 25.613281 2.3105469 A 1.0001 1.0001 0 0 0 24.960938 2.1015625 z M 25 4.3671875 L 44 19.154297 L 44 47 L 32 47 L 32 29 A 1.0001 1.0001 0 0 0 31 28 L 19 28 A 1.0001 1.0001 0 0 0 18 29 L 18 47 L 6 47 L 6 19.154297 L 25 4.3671875 z M 20 30 L 30 30 L 30 47 L 20 47 L 20 30 z"></path>
-        </svg>
-    </button>
+    <!-- TOP-LEFT CONTROLS (Home, Language, Theme) -->
+    <div class="fixed top-4 left-4 z-40 flex space-x-2">
+        <!-- HOME BUTTON -->
+        <button id="home-button" class="w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="currentColor">
+                <path d="M 24.960938 2.1015625 A 1.0001 1.0001 0 0 0 24.386719 2.3105469 L 1.3867188 20.210938 A 1.0001 1.0001 0 1 0 2.6132812 21.789062 L 4 20.708984 L 4 48 A 1.0001 1.0001 0 0 0 5 49 L 18.832031 49 A 1.0001 1.0001 0 0 0 19.158203 49 L 30.832031 49 A 1.0001 1.0001 0 0 0 31.158203 49 L 45 49 A 1.0001 1.0001 0 0 0 46 48 L 46 20.708984 L 47.386719 21.789062 A 1.0001 1.0001 0 1 0 48.613281 20.210938 L 25.613281 2.3105469 A 1.0001 1.0001 0 0 0 24.960938 2.1015625 z M 25 4.3671875 L 44 19.154297 L 44 47 L 32 47 L 32 29 A 1.0001 1.0001 0 0 0 31 28 L 19 28 A 1.0001 1.0001 0 0 0 18 29 L 18 47 L 6 47 L 6 19.154297 L 25 4.3671875 z M 20 30 L 30 30 L 30 47 L 20 47 L 20 30 z"></path>
+            </svg>
+        </button>
+
+        <!-- LANGUAGE TOGGLE BUTTON -->
+        <button id="language-toggle-button" class="w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105 font-bold text-sm">
+            中/En
+        </button>
+
+        <!-- THEME TOGGLE BUTTON -->
+        <button id="theme-toggle-button" class="w-12 h-12 flex items-center justify-center bg-white text-gray-800 rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+            <span id="theme-icon" class="text-xl">☀️</span>
+        </button>
+    </div>
     
-    <!-- FONT SIZE CONTROLS (Fixed top-right) -->
+    <!-- FONT SIZE CONTROLS (Fixed top-right) - CIRCULAR -->
     <div id="font-controls" class="fixed top-4 right-4 z-40 flex space-x-2">
-        <button id="font-smaller-button" class="px-3 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+        <!-- A- BUTTON -->
+        <button id="font-smaller-button" class="w-12 h-12 flex items-center justify-center bg-white text-gray-800 text-sm font-semibold rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
             A-
         </button>
-        <button id="font-larger-button" class="px-3 py-2 bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-200 transform hover:scale-105">
+        <!-- A+ BUTTON -->
+        <button id="font-larger-button" class="w-12 h-12 flex items-center justify-center bg-white text-gray-800 text-sm font-semibold rounded-full shadow-lg hover:bg-gray-100 transition duration-200 transform hover:scale-105">
             A+
         </button>
     </div>
 
     <!-- Card Display Area -->
     <main id="app-container" class="w-full max-w-xl flex flex-col items-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 tracking-tight">Welcome! Ready to learn?</h1>
+        <h1 id="main-title" class="text-3xl font-bold mb-6 tracking-tight"></h1>
 
         <!-- Flashcard Component -->
         <div id="flashcard-wrapper" class="flashcard w-full h-80 rounded-3xl perspective-1000">
             <div id="flashcard-inner" class="flashcard-inner">
-                <div id="flashcard-front" class="flashcard-front">
-                    <p class="font-extrabold text-indigo-600 transition duration-300">
-                        Click START or EDIT to begin!
-                    </p>
+                <div id="flashcard-front" class="flashcard-front bg-white">
+                    <p class="font-extrabold transition duration-300"></p>
                 </div>
-                <div id="flashcard-back" class="flashcard-back bg-indigo-50">
-                    <p class="text-gray-700 transition duration-300">
-                        Definition text here...
-                    </p>
+                <div id="flashcard-back" class="flashcard-back">
+                    <p class="transition duration-300"></p>
                 </div>
             </div>
         </div>
 
         <!-- Control Buttons -->
         <div id="controls" class="mt-8 flex space-x-4">
-            <button id="start-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition duration-200 transform hover:scale-105">
-                Start Review
-            </button>
-            <button id="edit-button" class="px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl shadow-md hover:bg-gray-300 transition duration-200 transform hover:scale-105">
-                Edit Cards
-            </button>
+            <button id="start-button" class="px-6 py-3 font-semibold rounded-xl shadow-lg transition duration-200 transform hover:scale-105"></button>
+            <button id="edit-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105"></button>
         </div>
 
         <!-- Progress Indicator / Message Box -->
-        <p id="progress-indicator" class="mt-4 text-sm text-gray-500 opacity-0 transition duration-300">
-            Card 0 of 0
-        </p>
+        <p id="progress-indicator" class="mt-4 text-sm opacity-0 transition duration-300"></p>
     </main>
 
     <!-- Completion Screen (Hidden by default) -->
     <div id="completion-screen" class="hidden text-center p-8 bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div class="text-6xl mb-4" role="img" aria-label="Celebration">🎉</div>
-        <h2 class="text-4xl font-extrabold text-indigo-600 mb-3">Great Job!</h2>
-        <p class="text-xl text-gray-700 mb-8">You successfully reviewed all the cards.</p>
+        <div id="completion-icon" class="text-6xl mb-4" role="img" aria-label="Celebration"></div>
+        <h2 id="completion-title" class="text-4xl font-extrabold mb-3"></h2>
+        <p id="completion-text" class="text-xl text-gray-700 mb-8"></p>
         
         <!-- Updated button layout for the completion screen -->
         <div class="flex flex-col space-y-4">
-            <button id="try-again-button" class="px-8 py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition duration-200 transform hover:scale-105">
-                Try Again
-            </button>
-            <button id="start-over-button" class="px-8 py-4 bg-gray-200 text-gray-800 font-bold rounded-xl shadow-lg hover:bg-gray-300 transition duration-200 transform hover:scale-105">
-                Edit Cards
-            </button>
+            <button id="try-again-button" class="px-8 py-4 text-white font-bold rounded-xl shadow-lg transition duration-200 transform hover:scale-105"></button>
+            <button id="start-over-button" class="px-8 py-4 font-bold rounded-xl shadow-lg transition duration-200 transform hover:scale-105"></button>
         </div>
     </div>
 
     <!-- Edit Modal (Hidden by default) -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Edit Flashcards (Term | Definition)</h2>
-            <p class="text-sm text-gray-500 mb-4">
-                Enter one flashcard per line, separating the **Front Page** and **Back Page** of the flashcard with a single vertical pipe `|`.
-            </p>
+            <h2 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+            <p id="modal-instruction" class="text-sm text-gray-500 mb-4"></p>
             <textarea id="edit-textarea" class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 text-base" placeholder="Example: 生氣 | 😡"></textarea>
             <div class="mt-4 flex justify-end space-x-3">
-                <button id="save-button" class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition duration-200">
-                    Save Cards
-                </button>
-                <button id="cancel-button" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition duration-200">
-                    Cancel
-                </button>
+                <button id="save-button" class="px-5 py-2 text-white font-semibold rounded-xl transition duration-200"></button>
+                <button id="cancel-button" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition duration-200"></button>
             </div>
         </div>
     </div>
 
-    <!-- SHARE BUTTON (Fixed bottom-right, circle, icon-only) - UPDATED WITH SVG -->
-    <button id="share-button" class="fixed bottom-6 right-6 z-40 w-14 h-14 flex items-center justify-center bg-indigo-600 text-white rounded-full shadow-xl hover:bg-indigo-700 transition duration-200 transform hover:scale-110">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" enable-background="new 0 0 50 50">
-            <path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z"/><path d="M24 7h2v21h-2z"/><path d="M35 40H15c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3h7v2h-7c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1h20c.6 0 1-.4 1-1V19c0-.6-.4-1-1-1h-7v-2h7c1.7 0 3 1.3 3 3v18c0 1.7-1.3 3-3 3z"/>
-        </svg>
-    </button>
+    <!-- Share Modal (Hidden by default) -->
+    <div id="share-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="share-modal-title"></h2>
+            <div id="share-options" class="space-y-3">
+                <!-- Share Option Buttons will be injected here -->
+            </div>
+            <div class="mt-6">
+                <button id="close-share-modal-button" class="w-full px-5 py-2 text-white font-semibold rounded-xl transition duration-200 bg-gray-400 hover:bg-gray-500"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARE BUTTON (Fixed bottom-right, circle, icon-only) -->
+    <button id="share-button" class="fixed bottom-6 right-6 z-40 w-14 h-14 flex items-center justify-center text-white rounded-full shadow-xl transition duration-200 transform hover:scale-110"></button>
 
     <script>
         // --- CONSTANTS AND STATE ---
         const STORAGE_KEY = 'simpleFlashcards';
         const FONT_SIZE_KEY = 'flashcardFontSize'; 
+        const LANG_KEY = 'flashcardLanguage';
+        const THEME_KEY = 'flashcardTheme';
         const CARD_TRANSITION_TIME_MS = 650;
         
         // Font size control constants
@@ -180,6 +213,11 @@
         let currentCardIndex = -1;
         let isFlipped = false;
         let currentTermFontSize = BASE_FONT_SIZE_PX; 
+        
+        let currentLanguage = 'en'; // 'en' or 'zh-TW'
+        let currentTheme = 'pro'; // 'pro', 'kid', 'dark', 'bw', or 'rainbow'
+        const THEME_CYCLE = ['pro', 'kid', 'dark', 'bw', 'rainbow'];
+
 
         const DEFAULT_CARDS = [
             { term: '生氣', definition: '😡' },
@@ -189,15 +227,160 @@
             { term: '失望', definition: '😞' }
         ];
 
+        // --- TRANSLATIONS (Updated to Traditional Chinese - zh-TW) ---
+        const translations = {
+            'en': {
+                'title': 'Simple Flashcards 📚',
+                'main-title': 'Welcome! Ready to learn?',
+                'card-launch-start': 'Click to start',
+                'card-launch-loaded': 'cards loaded',
+                'button-start': 'Start Review',
+                'button-edit': 'Edit Cards',
+                'progress-indicator-card': 'Card',
+                'progress-indicator-of': 'of',
+                'completion-title': 'Great Job!',
+                'completion-text': 'You successfully reviewed all the cards.',
+                'button-try-again': 'Try Again',
+                'modal-title': 'Edit Flashcards (Term | Definition)',
+                'modal-instruction': 'Enter one flashcard per line, separating the Term (Front page) and Definition (Back page) with a single vertical pipe `|`.',
+                'button-save': 'Save Cards',
+                'button-cancel': 'Cancel',
+                'msg-copy-success': 'Share link copied to clipboard!',
+                'msg-copy-fail': 'Failed to copy link.',
+                'err-empty-share': 'Cannot share an empty list. Please add cards first.',
+                'err-empty-cards': 'Please add cards in the Edit Cards menu.',
+                'msg-invalid-skipped-1': 'line(s) were invalid and skipped.',
+                'msg-success-loaded-1': 'Successfully loaded',
+                'msg-success-loaded-2': 'cards.',
+                'err-min-cards': 'You must enter at least one valid flashcard (Term | Definition).',
+                // --- Sharing additions ---
+                'share-modal-title': 'Share Your Cards',
+                'share-message': 'Check out these flashcards I created! Click the link to review them: ',
+                'share-copy': 'Copy Link',
+                'share-whatsapp': 'Share via WhatsApp',
+                'share-signal': 'Share via Signal',
+                'share-sms': 'Share via SMS',
+                'share-facebook': 'Share via Facebook',
+                'share-telegram': 'Share via Telegram',
+                'button-close': 'Close'
+            },
+            'zh-TW': {
+                'title': '簡單認字卡 📚',
+                'main-title': '歡迎! 準備好學習了嗎?',
+                'card-launch-start': '點擊開始',
+                'card-launch-loaded': '張卡已載入',
+                'button-start': '開始回顧',
+                'button-edit': '編輯卡片',
+                'progress-indicator-card': '卡片',
+                'progress-indicator-of': '共',
+                'completion-title': '太棒了!',
+                'completion-text': '您已成功回顧所有卡片。',
+                'button-try-again': '再來一次',
+                'modal-title': '編輯認字卡 (術語 | 定義)',
+                'modal-instruction': '每行輸入一張認字卡，請使用 `|` 符號分隔術語（卡片正面）和定義（卡片背面）。',
+                'button-save': '儲存卡片',
+                'button-cancel': '取消',
+                'msg-copy-success': '分享連結已複製!',
+                'msg-copy-fail': '複製連結失敗。',
+                'err-empty-share': '無法分享空列表。請先新增卡片。',
+                'err-empty-cards': '請在編輯卡片選單中新增卡片。',
+                'msg-invalid-skipped-1': '行無效並已跳過。',
+                'msg-success-loaded-1': '成功載入',
+                'msg-success-loaded-2': '張卡。',
+                'err-min-cards': '您必須輸入至少一張有效的認字卡 (術語 | 定義)。',
+                // --- Sharing additions ---
+                'share-modal-title': '分享您的卡片',
+                'share-message': '看看我做的這些認字卡！點擊連結即可開始回顧: ',
+                'share-copy': '複製連結',
+                'share-whatsapp': '透過 WhatsApp 分享',
+                'share-signal': '透過 Signal 分享',
+                'share-sms': '透過 SMS 分享',
+                'share-facebook': '透過 Facebook 分享',
+                'share-telegram': '透過 Telegram 分享',
+                'button-close': '關閉'
+            }
+        };
+
+        // --- THEME CONFIGURATIONS (Now includes 5 themes) ---
+        const themeConfig = {
+            'pro': {
+                primary: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+                secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+                cardFrontText: 'text-indigo-600',
+                cardBackBg: 'bg-indigo-50',
+                titleColor: 'text-gray-800',
+                completionColor: 'text-indigo-600',
+                completionIcon: '🎉',
+                shareBg: 'bg-indigo-600 hover:bg-indigo-700',
+                icon: '🌙'
+            },
+            'kid': {
+                primary: 'bg-teal-500 hover:bg-teal-600 text-white',
+                secondary: 'bg-pink-300 text-pink-900 hover:bg-pink-400',
+                cardFrontText: 'text-pink-500',
+                cardBackBg: 'bg-yellow-100',
+                titleColor: 'text-teal-700',
+                completionColor: 'text-teal-600',
+                completionIcon: '🚀',
+                shareBg: 'bg-teal-500 hover:bg-teal-600',
+                icon: '🎈'
+            },
+            'dark': {
+                primary: 'bg-green-500 hover:bg-green-600 text-gray-900',
+                secondary: 'bg-gray-700 text-gray-200 hover:bg-gray-600',
+                cardFrontText: 'text-green-400',
+                cardBackBg: 'bg-gray-800 text-white', // Card back text is white
+                titleColor: 'text-white',
+                completionColor: 'text-green-400',
+                completionIcon: '🌃',
+                shareBg: 'bg-green-500 hover:bg-green-600',
+                icon: '🌑'
+            },
+            'bw': {
+                primary: 'bg-black hover:bg-gray-800 text-white border-2 border-black',
+                secondary: 'bg-white text-black hover:bg-gray-100 border-2 border-black',
+                cardFrontText: 'text-black',
+                cardBackBg: 'bg-gray-100 text-black',
+                titleColor: 'text-black',
+                completionColor: 'text-black',
+                completionIcon: '⬜',
+                shareBg: 'bg-black hover:bg-gray-800',
+                icon: '♟️'
+            },
+            'rainbow': {
+                primary: 'bg-fuchsia-500 hover:bg-fuchsia-600 text-white',
+                secondary: 'bg-sky-400 text-white hover:bg-sky-500',
+                cardFrontText: 'text-red-600',
+                cardBackBg: 'bg-yellow-100 text-indigo-800',
+                titleColor: 'text-indigo-800',
+                completionColor: 'text-fuchsia-600',
+                completionIcon: '🌈',
+                shareBg: 'bg-fuchsia-500 hover:bg-fuchsia-600',
+                icon: '💖'
+            }
+        };
+
+
         // --- DOM ELEMENTS ---
+        const body = document.body;
+        const pageTitle = document.getElementById('page-title');
         const homeButton = document.getElementById('home-button');
+        const languageToggleButton = document.getElementById('language-toggle-button');
+        const themeToggleButton = document.getElementById('theme-toggle-button');
+        const themeIcon = document.getElementById('theme-icon');
         const fontSmallerButton = document.getElementById('font-smaller-button');
         const fontLargerButton = document.getElementById('font-larger-button');
         const appContainer = document.getElementById('app-container');
+        const mainTitle = document.getElementById('main-title');
         const completionScreen = document.getElementById('completion-screen');
+        const completionTitle = document.getElementById('completion-title');
+        const completionText = document.getElementById('completion-text');
+        const completionIcon = document.getElementById('completion-icon');
         const flashcardWrapper = document.getElementById('flashcard-wrapper');
-        const flashcardFront = document.getElementById('flashcard-front').querySelector('p');
-        const flashcardBack = document.getElementById('flashcard-back').querySelector('p');
+        const flashcardFrontP = document.getElementById('flashcard-front').querySelector('p');
+        const flashcardBackP = document.getElementById('flashcard-back').querySelector('p');
+        const flashcardFrontDiv = document.getElementById('flashcard-front');
+        const flashcardBackDiv = document.getElementById('flashcard-back');
         const progressIndicator = document.getElementById('progress-indicator');
         const startButton = document.getElementById('start-button');
         const editButton = document.getElementById('edit-button');
@@ -205,11 +388,118 @@
         const tryAgainButton = document.getElementById('try-again-button');
         const startOverButton = document.getElementById('start-over-button'); 
         const editModal = document.getElementById('edit-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalInstruction = document.getElementById('modal-instruction');
         const editTextArea = document.getElementById('edit-textarea');
         const saveButton = document.getElementById('save-button');
         const cancelButton = document.getElementById('cancel-button');
         const controls = document.getElementById('controls');
+        
+        // --- New Sharing Modal Elements ---
+        const shareModal = document.getElementById('share-modal');
+        const shareModalTitle = document.getElementById('share-modal-title');
+        const shareOptions = document.getElementById('share-options');
+        const closeShareModalButton = document.getElementById('close-share-modal-button');
 
+
+        // --- LANGUAGE & THEME FUNCTIONS ---
+        
+        function updateLanguage() {
+            const lang = currentLanguage;
+
+            // Page Title
+            pageTitle.textContent = translations[lang]['title'];
+
+            // Main App Text
+            mainTitle.textContent = translations[lang]['main-title'];
+
+            startButton.textContent = translations[lang]['button-start'];
+            editButton.textContent = translations[lang]['button-edit'];
+            
+            // Completion Screen
+            completionTitle.textContent = translations[lang]['completion-title'];
+            completionText.textContent = translations[lang]['completion-text'];
+            tryAgainButton.textContent = translations[lang]['button-try-again'];
+            startOverButton.textContent = translations[lang]['button-edit']; // Start Over button acts as Edit
+            
+            // Edit Modal
+            modalTitle.textContent = translations[lang]['modal-title'];
+            modalInstruction.textContent = translations[lang]['modal-instruction'];
+            saveButton.textContent = translations[lang]['button-save'];
+            cancelButton.textContent = translations[lang]['button-cancel'];
+            
+            // Share Modal
+            closeShareModalButton.textContent = translations[lang]['button-close'];
+
+            // Update Language Toggle text
+            languageToggleButton.textContent = lang === 'en' ? '中/En' : 'En/中';
+
+            // Update Launch Card and Progress
+            resetToLaunchState(false); // Only update text, not full reset
+        }
+        
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'zh-TW' : 'en';
+            localStorage.setItem(LANG_KEY, currentLanguage);
+            updateLanguage();
+        }
+
+        function applyTheme(theme) {
+            const config = themeConfig[theme];
+            
+            // 1. Update Body Class
+            body.classList.remove(...THEME_CYCLE.map(t => `theme-${t}`));
+            body.classList.add(`theme-${theme}`);
+            
+            // 2. Update Dynamic Buttons
+            const buttonsToStyle = [startButton, tryAgainButton, saveButton];
+            const secondaryButtons = [editButton, startOverButton];
+
+            // Primary Buttons (Start, Save, Try Again)
+            buttonsToStyle.forEach(btn => {
+                // Clear and apply new classes for primary button style
+                btn.className = `px-6 py-3 font-semibold rounded-xl shadow-lg transition duration-200 transform hover:scale-105 ${config.primary}`;
+            });
+
+            // Secondary Buttons (Edit, Start Over)
+            secondaryButtons.forEach(btn => {
+                // Clear and apply new classes for secondary button style
+                btn.className = `px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 ${config.secondary}`;
+            });
+
+            // Share Button
+            shareButton.className = `fixed bottom-6 right-6 z-40 w-14 h-14 flex items-center justify-center text-white rounded-full shadow-xl transition duration-200 transform hover:scale-110 ${config.shareBg}`;
+            shareButton.innerHTML = getShareSVG();
+
+            // Card Styling
+            // 3. Clear all old theme classes before applying new ones
+            flashcardFrontP.className = 'font-extrabold transition duration-300';
+            flashcardFrontP.classList.add(config.cardFrontText);
+            
+            flashcardBackDiv.className = 'flashcard-back';
+            // FIX: Split multi-class string from config.cardBackBg before adding.
+            flashcardBackDiv.classList.add(...config.cardBackBg.split(' ').filter(c => c));
+            
+            flashcardFrontDiv.className = 'flashcard-front';
+            flashcardFrontDiv.classList.add('bg-white'); // Front card is always white/light for readability
+
+            // App title color (Remove all previous text colors and apply new one)
+            mainTitle.classList.remove(...Object.values(themeConfig).map(c => c.titleColor));
+            mainTitle.classList.add(config.titleColor);
+
+            // Completion Screen & Theme Icon
+            completionTitle.className = `text-4xl font-extrabold mb-3 ${config.completionColor}`;
+            completionIcon.textContent = config.completionIcon;
+            themeIcon.textContent = config.icon; 
+        }
+        
+        function toggleTheme() {
+            const currentIndex = THEME_CYCLE.indexOf(currentTheme);
+            const nextIndex = (currentIndex + 1) % THEME_CYCLE.length;
+            currentTheme = THEME_CYCLE[nextIndex];
+            localStorage.setItem(THEME_KEY, currentTheme);
+            applyTheme(currentTheme);
+        }
 
         // --- URL SHARING LOGIC (UTF-8 SAFE) ---
 
@@ -217,7 +507,6 @@
          * Converts a string to Base64 using a UTF-8 safe pipeline.
          */
         function utf8_to_b64(str) {
-            // Encode the string as URI components, then convert to Latin-1
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
                 function(match, p1) {
                     return String.fromCharCode('0x' + p1);
@@ -244,9 +533,7 @@
          * Converts the current cards array into a Base64-encoded URL-safe string.
          */
         function encodeCards(cards) {
-            // 1. Convert card objects to the "Term|Definition" string array format
             const cardStrings = cards.map(c => `${c.term}|${c.definition}`);
-            // 2. Base64 encode the stringified array using the UTF-8 safe function
             const jsonString = JSON.stringify(cardStrings);
             return utf8_to_b64(jsonString); 
         }
@@ -257,11 +544,9 @@
         function decodeCards(encodedData) {
             try {
                 if (!encodedData) return [];
-                // 1. Base64 decode using the UTF-8 safe function
                 const jsonString = b64_to_utf8(encodedData);
                 if (!jsonString) return [];
                 
-                // 2. Parse the array of strings
                 const cardStrings = JSON.parse(jsonString);
                 
                 const decodedCards = [];
@@ -283,7 +568,6 @@
         
         /**
          * Checks the URL for a shared list and loads it.
-         * Returns true if cards were loaded from the URL, false otherwise.
          */
         function loadCardsFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -317,24 +601,28 @@
 
         // --- STORAGE AND INITIALIZATION ---
 
-        function loadCards() {
-            // 1. Attempt to load cards from the URL (highest priority for sharing)
-            if (loadCardsFromUrl()) {
-                // If loaded from URL, we also save to localStorage to persist the shared list
-                saveCards();
-                return;
-            }
+        function loadInitialState() {
+            // Load Language
+            currentLanguage = localStorage.getItem(LANG_KEY) || (navigator.language.includes('zh') ? 'zh-TW' : 'en');
+            // Load Theme
+            const storedTheme = localStorage.getItem(THEME_KEY);
+            currentTheme = (storedTheme && THEME_CYCLE.includes(storedTheme)) ? storedTheme : 'pro';
             
-            // 2. Fallback to localStorage
-            try {
-                const storedCards = localStorage.getItem(STORAGE_KEY);
-                cards = storedCards ? JSON.parse(storedCards) : DEFAULT_CARDS;
-                if (!Array.isArray(cards) || cards.length === 0) {
+            applyTheme(currentTheme);
+            updateLanguage();
+
+            // Load Cards (URL has highest priority)
+            if (!loadCardsFromUrl()) {
+                try {
+                    const storedCards = localStorage.getItem(STORAGE_KEY);
+                    cards = storedCards ? JSON.parse(storedCards) : DEFAULT_CARDS;
+                    if (!Array.isArray(cards) || cards.length === 0) {
+                        cards = DEFAULT_CARDS;
+                    }
+                } catch (error) {
+                    console.error('Error loading cards from localStorage, using defaults:', error);
                     cards = DEFAULT_CARDS;
                 }
-            } catch (error) {
-                console.error('Error loading cards from localStorage, using defaults:', error);
-                cards = DEFAULT_CARDS;
             }
         }
         
@@ -366,8 +654,8 @@
             const definitionSize = Math.max(MIN_FONT_SIZE_PX - DEFINITION_OFFSET_PX, currentTermFontSize - DEFINITION_OFFSET_PX);
             
             // Apply inline style to the paragraph elements inside the card
-            flashcardFront.style.fontSize = `${currentTermFontSize}px`;
-            flashcardBack.style.fontSize = `${definitionSize}px`;
+            flashcardFrontP.style.fontSize = `${currentTermFontSize}px`;
+            flashcardBackP.style.fontSize = `${definitionSize}px`;
 
             // Save for persistence
             localStorage.setItem(FONT_SIZE_KEY, currentTermFontSize);
@@ -407,28 +695,37 @@
         /**
          * Resets the UI to the initial launch state (before review starts).
          */
-        function resetToLaunchState() {
-            completionScreen.classList.add('hidden');
-            editModal.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            controls.classList.remove('hidden');
-            progressIndicator.classList.add('opacity-0');
-            flashcardWrapper.classList.remove('flipped');
-            currentCardIndex = -1;
-            isFlipped = false;
+        function resetToLaunchState(fullReset = true) {
+            if(fullReset) {
+                completionScreen.classList.add('hidden');
+                editModal.classList.add('hidden');
+                shareModal.classList.add('hidden'); // Close share modal too
+                appContainer.classList.remove('hidden');
+                controls.classList.remove('hidden');
+                progressIndicator.classList.add('opacity-0');
+                flashcardWrapper.classList.remove('flipped');
+                currentCardIndex = -1;
+                isFlipped = false;
+            }
 
-            // Set initial card content, using innerHTML for the line break
-            flashcardFront.innerHTML = `Click to start <br> (${cards.length} cards loaded)`;
-            flashcardFront.classList.add('text-indigo-600');
-            flashcardFront.classList.remove('text-red-500');
-            flashcardBack.textContent = 'Definition text here...';
+            // Set initial card content
+            const lang = currentLanguage;
+            
+            // Clear all old theme classes before applying new ones
+            flashcardFrontP.className = 'font-extrabold transition duration-300';
+            flashcardFrontP.classList.add(themeConfig[currentTheme].cardFrontText);
+            
+            flashcardFrontP.innerHTML = `${translations[lang]['card-launch-start']} <br> (${cards.length} ${translations[lang]['card-launch-loaded']})`;
+            flashcardBackP.textContent = translations[lang]['modal-instruction'];
         }
 
         function startReview() {
+            const lang = currentLanguage;
+
             if (cards.length === 0) {
-                flashcardFront.innerHTML = 'Please add cards in the <br> Edit Cards menu.';
-                flashcardFront.classList.remove('text-indigo-600');
-                flashcardFront.classList.add('text-red-500');
+                flashcardFrontP.innerHTML = translations[lang]['err-empty-cards'].replace(/\n/g, '<br>');
+                flashcardFrontP.classList.remove(themeConfig[currentTheme].cardFrontText);
+                flashcardFrontP.classList.add('text-red-500');
                 controls.classList.remove('hidden');
                 return;
             }
@@ -443,7 +740,6 @@
             appContainer.classList.remove('hidden');
             controls.classList.add('hidden');
             progressIndicator.classList.remove('opacity-0');
-            progressIndicator.classList.remove('text-red-500'); // Clear any error messages
 
             // Show first card
             displayCurrentCard();
@@ -457,20 +753,21 @@
             const card = cards[actualIndex];
 
             // 1. CLEAR CONTENT AND RESET FLIP STATE INSTANTLY (Flicker Fix)
-            flashcardBack.textContent = ''; 
+            flashcardBackP.textContent = ''; 
             flashcardWrapper.classList.remove('flipped');
             isFlipped = false;
 
             // 2. Set front content instantly (using textContent for review cards)
-            flashcardFront.textContent = card.term;
+            flashcardFrontP.textContent = card.term;
             
             // 3. Update definition only AFTER the card has fully rotated back to the front face.
             setTimeout(() => {
-                 flashcardBack.textContent = card.definition;
+                 flashcardBackP.textContent = card.definition;
             }, CARD_TRANSITION_TIME_MS); 
 
             // Update progress
-            progressIndicator.textContent = `Card ${currentCardIndex + 1} of ${cards.length}`;
+            const lang = currentLanguage;
+            progressIndicator.textContent = `${translations[lang]['progress-indicator-card']} ${currentCardIndex + 1} ${translations[lang]['progress-indicator-of']} ${cards.length}`;
             progressIndicator.classList.remove('text-red-500');
             progressIndicator.classList.add('text-gray-500');
         }
@@ -512,49 +809,101 @@
         }
         
         /**
-         * Copies the shareable URL to the clipboard and shows a message.
+         * SVG for the Share Icon
          */
-        function handleShare() {
-            if (cards.length === 0) {
-                displayMessage('Cannot share an empty list. Please add cards first.', true);
-                return;
-            }
-            
-            const shareUrl = getShareableUrl();
-            
-            // Robust clipboard logic
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    displayMessage('Share link copied to clipboard!', false);
-                }).catch(() => {
-                    // Fallback if permission is denied
-                    copyToClipboardFallback(shareUrl);
-                });
-            } else {
-                // Fallback for non-secure contexts (like some iframe environments)
-                copyToClipboardFallback(shareUrl);
-            }
+        function getShareSVG() {
+            return `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" enable-background="new 0 0 50 50">
+                <path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z"/><path d="M24 7h2v21h-2z"/><path d="M35 40H15c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3h7v2h-7c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1h20c.6 0 1-.4 1-1V19c0-.6-.4-1-1-1h-7v-2h7c1.7 0 3 1.3 3 3v18c0 1.7-1.3 3-3 3z"/>
+                </svg>`;
         }
-        
+
+
         /**
          * Fallback function to copy text to clipboard using document.execCommand('copy').
          */
         function copyToClipboardFallback(text) {
+            const lang = currentLanguage;
             const dummy = document.createElement('textarea');
-            dummy.style.position = 'fixed'; // Make sure it's not visible
+            dummy.style.position = 'fixed'; 
             dummy.style.opacity = '0';
             dummy.value = text;
             document.body.appendChild(dummy);
             dummy.select();
             try {
                 document.execCommand('copy');
-                displayMessage('Share link copied to clipboard!', false);
+                displayMessage(translations[lang]['msg-copy-success'], false);
             } catch (err) {
-                // Final error message if fallback also fails
-                displayMessage('Failed to copy link.', true);
+                displayMessage(translations[lang]['msg-copy-fail'], true);
                 console.error("Share URL:", text);
             }
             document.body.removeChild(dummy);
+        }
+        
+        /**
+         * Opens the sharing options modal.
+         */
+        function openShareModal() {
+            const lang = currentLanguage;
+            const shareUrl = getShareableUrl();
+            const message = translations[lang]['share-message'] + shareUrl;
+
+            shareModalTitle.textContent = translations[lang]['share-modal-title'];
+
+            // Define sharing platforms and their configurations
+            const platforms = [
+                // Icon, Name, URL scheme, Tailwind Color classes
+                { icon: '📱', name: 'WhatsApp', url: `whatsapp://send?text=${encodeURIComponent(message)}`, color: 'bg-green-500 hover:bg-green-600' },
+                { icon: '✈️', name: 'Telegram', url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(translations[lang]['share-message'].trim())}`, color: 'bg-sky-400 hover:bg-sky-500' },
+                { icon: '📘', name: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, color: 'bg-blue-700 hover:bg-blue-800' },
+                { icon: '🔒', name: 'Signal', url: `signal://send?text=${encodeURIComponent(message)}`, color: 'bg-blue-600 hover:bg-blue-700' },
+                { icon: '✉️', name: 'SMS', url: `sms:?body=${encodeURIComponent(message)}`, color: 'bg-gray-700 hover:bg-gray-800' }
+            ];
+
+            shareOptions.innerHTML = ''; // Clear previous options
+
+            // 1. Add the Copy Link option (always present)
+            const copyBtn = document.createElement('button');
+            copyBtn.id = 'share-copy-link';
+            copyBtn.className = `w-full px-4 py-3 font-semibold rounded-xl transition duration-200 text-white flex items-center justify-center ${themeConfig[currentTheme].primary}`;
+            copyBtn.innerHTML = `${translations[lang]['share-copy']} <span class="ml-2">📋</span>`;
+            copyBtn.addEventListener('click', () => {
+                copyToClipboardFallback(shareUrl);
+                closeShareModal();
+            });
+            shareOptions.appendChild(copyBtn);
+
+            // 2. Add platform sharing links
+            platforms.forEach(platform => {
+                const link = document.createElement('a');
+                link.href = platform.url;
+                link.target = '_blank'; // Open in a new tab/app
+                // Use platform-specific colors
+                link.className = `w-full px-4 py-3 font-semibold rounded-xl transition duration-200 text-white flex items-center justify-center ${platform.color}`;
+                // Using platform.name for dynamic translation key look-up
+                link.innerHTML = `${platform.icon} <span class="ml-2">${translations[lang][`share-${platform.name.toLowerCase()}`]}</span>`;
+                shareOptions.appendChild(link);
+            });
+
+            shareModal.classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            shareModal.classList.add('hidden');
+        }
+
+        /**
+         * Handles the share button click (now opens the modal).
+         */
+        function handleShare() {
+            const lang = currentLanguage;
+
+            if (cards.length === 0) {
+                displayMessage(translations[lang]['err-empty-share'], true);
+                return;
+            }
+            
+            openShareModal();
         }
 
         // --- EDITING LOGIC ---
@@ -566,10 +915,9 @@
             progressIndicator.textContent = text;
             progressIndicator.classList.remove('opacity-0', 'text-gray-500', 'text-red-500');
             progressIndicator.classList.add(isError ? 'text-red-500' : 'text-gray-500');
-            // Show message immediately
+            
             progressIndicator.classList.remove('opacity-0'); 
             
-            // Hide message after 5 seconds
             setTimeout(() => {
                 progressIndicator.classList.add('opacity-0');
             }, 5000);
@@ -597,6 +945,7 @@
         function handleSaveCards() {
             const rawText = editTextArea.value.trim();
             const lines = rawText.split('\n').filter(line => line.trim() !== '');
+            const lang = currentLanguage;
 
             const newCards = [];
             let errorCount = 0;
@@ -621,13 +970,13 @@
                 resetToLaunchState(); 
                 
                 if (errorCount > 0) {
-                    displayMessage(`${errorCount} line(s) were invalid and skipped.`, true);
+                    displayMessage(`${newCards.length} ${translations[lang]['msg-success-loaded-2']} ${errorCount} ${translations[lang]['msg-invalid-skipped-1']}`, false);
                 } else {
-                    displayMessage(`Successfully loaded ${cards.length} cards.`, false);
+                    displayMessage(`${translations[lang]['msg-success-loaded-1']} ${cards.length} ${translations[lang]['msg-success-loaded-2']}`, false);
                 }
 
             } else {
-                displayMessage('You must enter at least one valid flashcard (Term | Definition).', true);
+                displayMessage(translations[lang]['err-min-cards'], true);
             }
         }
 
@@ -635,7 +984,11 @@
         // --- EVENT LISTENERS ---
 
         // Home button returns to launch state
-        homeButton.addEventListener('click', resetToLaunchState);
+        homeButton.addEventListener('click', () => resetToLaunchState(true));
+
+        // Language and Theme Toggles
+        languageToggleButton.addEventListener('click', toggleLanguage);
+        themeToggleButton.addEventListener('click', toggleTheme);
 
         // Font size controls
         fontSmallerButton.addEventListener('click', decreaseFontSize);
@@ -654,8 +1007,9 @@
             openEditModal();
         });
 
-        // Share Button
+        // Share Button (Now opens the modal)
         shareButton.addEventListener('click', handleShare);
+        closeShareModalButton.addEventListener('click', closeShareModal);
 
 
         // Card navigation (Click anywhere on the card container)
@@ -668,7 +1022,7 @@
 
         // --- INITIAL SETUP ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadCards();
+            loadInitialState();
             loadFontSize(); // Load and apply font size preference
             resetToLaunchState(); // Ensure the app starts in the correct state
         });
