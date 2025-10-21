@@ -210,27 +210,28 @@
         
         let cards = [];
         let shuffledIndices = [];
-        let currentCardIndex = -1;
+        let currentCardIndex = -1; // -1 means launch/idle state
         let isFlipped = false;
         let currentTermFontSize = BASE_FONT_SIZE_PX; 
         
-        let currentLanguage = 'en'; // 'en' or 'zh-TW'
+        let currentLanguage = 'zh-TW'; // 'en' or 'zh-TW'
         let currentTheme = 'pro'; // 'pro', 'kid', 'dark', 'bw', or 'rainbow'
         const THEME_CYCLE = ['pro', 'kid', 'dark', 'bw', 'rainbow'];
 
 
+        // Default cards are now English term / Chinese definition
         const DEFAULT_CARDS = [
-            { term: '生氣', definition: '😡' },
-            { term: '害怕', definition: '😨' },
-            { term: '高興', definition: '😄' },
-            { term: '期待', definition: '🤩' },
-            { term: '失望', definition: '😞' }
+            { term: 'Hello', definition: '你好' },
+            { term: 'Goodbye', definition: '再見' },
+            { term: 'Thank you', definition: '謝謝' },
+            { term: 'Excuse me', definition: '不好意思' },
+            { term: 'Yes', definition: '是' }
         ];
 
         // --- TRANSLATIONS (Updated to Traditional Chinese - zh-TW) ---
         const translations = {
             'en': {
-                'title': 'Simple Flashcards 📚',
+                'title': '📚 Simple Flashcards',
                 'main-title': 'Welcome! Ready to learn?',
                 'card-launch-start': 'Click to start',
                 'card-launch-loaded': 'cards loaded',
@@ -242,7 +243,7 @@
                 'completion-text': 'You successfully reviewed all the cards.',
                 'button-try-again': 'Try Again',
                 'modal-title': 'Edit Flashcards (Term | Definition)',
-                'modal-instruction': 'Enter one flashcard per line, separating the Term (Front page) and Definition (Back page) with a single vertical pipe `|`.',
+                'modal-instruction': 'Enter one flashcard per line, separating the Term and Definition with a single vertical pipe `|`.',
                 'button-save': 'Save Cards',
                 'button-cancel': 'Cancel',
                 'msg-copy-success': 'Share link copied to clipboard!',
@@ -301,7 +302,7 @@
             }
         };
 
-        // --- THEME CONFIGURATIONS (Now includes 5 themes) ---
+        // --- THEME CONFIGURATIONS ---
         const themeConfig = {
             'pro': {
                 primary: 'bg-indigo-600 hover:bg-indigo-700 text-white',
@@ -329,7 +330,7 @@
                 primary: 'bg-green-500 hover:bg-green-600 text-gray-900',
                 secondary: 'bg-gray-700 text-gray-200 hover:bg-gray-600',
                 cardFrontText: 'text-green-400',
-                cardBackBg: 'bg-gray-800 text-white', // Card back text is white
+                cardBackBg: 'bg-gray-800 text-white', 
                 titleColor: 'text-white',
                 completionColor: 'text-green-400',
                 completionIcon: '🌃',
@@ -395,7 +396,7 @@
         const cancelButton = document.getElementById('cancel-button');
         const controls = document.getElementById('controls');
         
-        // --- New Sharing Modal Elements ---
+        // --- Sharing Modal Elements ---
         const shareModal = document.getElementById('share-modal');
         const shareModalTitle = document.getElementById('share-modal-title');
         const shareOptions = document.getElementById('share-options');
@@ -403,6 +404,19 @@
 
 
         // --- LANGUAGE & THEME FUNCTIONS ---
+
+        /**
+         * Helper to update the progress indicator text based on current language and state.
+         */
+        function updateProgressIndicator() {
+            const lang = currentLanguage;
+            if (currentCardIndex > -1 && currentCardIndex < cards.length) {
+                progressIndicator.textContent = `${translations[lang]['progress-indicator-card']} ${currentCardIndex + 1} ${translations[lang]['progress-indicator-of']} ${cards.length}`;
+            } else {
+                // Hide if not in review mode
+                progressIndicator.classList.add('opacity-0');
+            }
+        }
         
         function updateLanguage() {
             const lang = currentLanguage;
@@ -434,8 +448,12 @@
             // Update Language Toggle text
             languageToggleButton.textContent = lang === 'en' ? '中/En' : 'En/中';
 
-            // Update Launch Card and Progress
-            resetToLaunchState(false); // Only update text, not full reset
+            // Only update card content if on the launch screen
+            if (currentCardIndex === -1) {
+                resetToLaunchState(false); // Update launch screen text
+            } else {
+                updateProgressIndicator(); // Only update progress text if mid-review
+            }
         }
         
         function toggleLanguage() {
@@ -457,13 +475,11 @@
 
             // Primary Buttons (Start, Save, Try Again)
             buttonsToStyle.forEach(btn => {
-                // Clear and apply new classes for primary button style
                 btn.className = `px-6 py-3 font-semibold rounded-xl shadow-lg transition duration-200 transform hover:scale-105 ${config.primary}`;
             });
 
             // Secondary Buttons (Edit, Start Over)
             secondaryButtons.forEach(btn => {
-                // Clear and apply new classes for secondary button style
                 btn.className = `px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 ${config.secondary}`;
             });
 
@@ -472,18 +488,16 @@
             shareButton.innerHTML = getShareSVG();
 
             // Card Styling
-            // 3. Clear all old theme classes before applying new ones
             flashcardFrontP.className = 'font-extrabold transition duration-300';
             flashcardFrontP.classList.add(config.cardFrontText);
             
             flashcardBackDiv.className = 'flashcard-back';
-            // FIX: Split multi-class string from config.cardBackBg before adding.
             flashcardBackDiv.classList.add(...config.cardBackBg.split(' ').filter(c => c));
             
             flashcardFrontDiv.className = 'flashcard-front';
-            flashcardFrontDiv.classList.add('bg-white'); // Front card is always white/light for readability
+            flashcardFrontDiv.classList.add('bg-white');
 
-            // App title color (Remove all previous text colors and apply new one)
+            // App title color
             mainTitle.classList.remove(...Object.values(themeConfig).map(c => c.titleColor));
             mainTitle.classList.add(config.titleColor);
 
@@ -602,8 +616,9 @@
         // --- STORAGE AND INITIALIZATION ---
 
         function loadInitialState() {
-            // Load Language
-            currentLanguage = localStorage.getItem(LANG_KEY) || (navigator.language.includes('zh') ? 'zh-TW' : 'en');
+            // Load Language - Default to 'zh-TW' if no storage found (User Request)
+            currentLanguage = localStorage.getItem(LANG_KEY) || 'zh-TW';
+            
             // Load Theme
             const storedTheme = localStorage.getItem(THEME_KEY);
             currentTheme = (storedTheme && THEME_CYCLE.includes(storedTheme)) ? storedTheme : 'pro';
@@ -696,27 +711,32 @@
          * Resets the UI to the initial launch state (before review starts).
          */
         function resetToLaunchState(fullReset = true) {
+            const lang = currentLanguage;
+            
             if(fullReset) {
-                completionScreen.classList.add('hidden');
-                editModal.classList.add('hidden');
-                shareModal.classList.add('hidden'); // Close share modal too
-                appContainer.classList.remove('hidden');
-                controls.classList.remove('hidden');
-                progressIndicator.classList.add('opacity-0');
-                flashcardWrapper.classList.remove('flipped');
-                currentCardIndex = -1;
+                currentCardIndex = -1; // Critical reset
                 isFlipped = false;
             }
 
-            // Set initial card content
-            const lang = currentLanguage;
+            // Always run general UI cleanup
+            completionScreen.classList.add('hidden');
+            editModal.classList.add('hidden');
+            shareModal.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            controls.classList.remove('hidden');
+            progressIndicator.classList.add('opacity-0');
             
-            // Clear all old theme classes before applying new ones
-            flashcardFrontP.className = 'font-extrabold transition duration-300';
-            flashcardFrontP.classList.add(themeConfig[currentTheme].cardFrontText);
-            
-            flashcardFrontP.innerHTML = `${translations[lang]['card-launch-start']} <br> (${cards.length} ${translations[lang]['card-launch-loaded']})`;
-            flashcardBackP.textContent = translations[lang]['modal-instruction'];
+            // Only set card content if we are in the launch state ---
+            if (currentCardIndex === -1) {
+                flashcardWrapper.classList.remove('flipped');
+                
+                // Set initial card content
+                flashcardFrontP.className = 'font-extrabold transition duration-300';
+                flashcardFrontP.classList.add(themeConfig[currentTheme].cardFrontText);
+                
+                flashcardFrontP.innerHTML = `${translations[lang]['card-launch-start']} <br> (${cards.length} ${translations[lang]['card-launch-loaded']})`;
+                flashcardBackP.textContent = translations[lang]['modal-instruction']; // Intentional instruction on card back
+            }
         }
 
         function startReview() {
