@@ -150,8 +150,8 @@
 
         <!-- Review Buttons (shown only while reviewing) -->
         <div id="review-controls" class="mt-8 hidden flex space-x-4">
-            <button id="knew-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-green-500 hover:bg-green-600 text-white"></button>
-            <button id="missed-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-rose-500 hover:bg-rose-600 text-white"></button>
+            <button id="knew-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-green-700 hover:bg-green-800 text-white"></button>
+            <button id="missed-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-rose-700 hover:bg-rose-800 text-white"></button>
         </div>
 
         <!-- Progress Indicator / Message Box -->
@@ -999,7 +999,7 @@
             const isMobileShare = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
             const platforms = [
                 // Icon, Name, URL, Tailwind Color classes, mobileOnly?
-                { icon: '📱', name: 'WhatsApp', url: `https://wa.me/?text=${encodeURIComponent(message)}`, color: 'bg-green-500 hover:bg-green-600' },
+                { icon: '📱', name: 'WhatsApp', url: `https://wa.me/?text=${encodeURIComponent(message)}`, color: 'bg-green-700 hover:bg-green-800' },
                 { icon: '✈️', name: 'Telegram', url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(translations[lang]['share-message'].trim())}`, color: 'bg-sky-400 hover:bg-sky-500' },
                 { icon: '📘', name: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, color: 'bg-blue-700 hover:bg-blue-800' },
                 { icon: '🔒', name: 'Signal', url: `signal://send?text=${encodeURIComponent(message)}`, color: 'bg-blue-600 hover:bg-blue-700', mobileOnly: true },
