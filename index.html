@@ -996,7 +996,12 @@
             // App-scheme links (signal://, sms:) do nothing on a desktop
             // without those apps, so they are only offered on phones/tablets.
             // WhatsApp uses its https share URL, which works everywhere.
-            const isMobileShare = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+            // Touch alone doesn't mean mobile: touchscreen Windows laptops
+            // and desktop monitors also have maxTouchPoints > 0. Only
+            // desktop-mode iPads (MacIntel + touch) count as mobile via
+            // touch; phones/tablets are caught by the user-agent test.
+            const isDesktopModeIPad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+            const isMobileShare = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || isDesktopModeIPad;
             const platforms = [
                 // Icon, Name, URL, Tailwind Color classes, mobileOnly?
                 { icon: '📱', name: 'WhatsApp', url: `https://wa.me/?text=${encodeURIComponent(message)}`, color: 'bg-green-700 hover:bg-green-800' },
