@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Simple flashcards: make your own term/definition cards, review them in random order, mark what you knew, and share a deck with one link.">
     <title id="page-title">📚 Random Flashcards</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -147,6 +148,12 @@
             <button id="edit-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105"></button>
         </div>
 
+        <!-- Review Buttons (shown only while reviewing) -->
+        <div id="review-controls" class="mt-8 hidden flex space-x-4">
+            <button id="knew-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-green-500 hover:bg-green-600 text-white"></button>
+            <button id="missed-button" class="px-6 py-3 font-semibold rounded-xl shadow-md transition duration-200 transform hover:scale-105 bg-rose-500 hover:bg-rose-600 text-white"></button>
+        </div>
+
         <!-- Progress Indicator / Message Box -->
         <p id="progress-indicator" class="mt-4 text-sm opacity-0 transition duration-300"></p>
     </main>
@@ -155,7 +162,8 @@
     <div id="completion-screen" class="hidden text-center p-8 bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div id="completion-icon" class="text-6xl mb-4" role="img" aria-label="Celebration"></div>
         <h2 id="completion-title" class="text-4xl font-extrabold mb-3"></h2>
-        <p id="completion-text" class="text-xl text-gray-700 mb-8"></p>
+        <p id="completion-text" class="text-xl text-gray-700 mb-2"></p>
+        <p id="completion-stats" class="text-lg text-gray-600 mb-8"></p>
         
         <!-- Updated button layout for the completion screen -->
         <div class="flex flex-col space-y-4">
@@ -170,6 +178,11 @@
             <h2 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4"></h2>
             <p id="modal-instruction" class="text-sm text-gray-500 mb-4"></p>
             <textarea id="edit-textarea" class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 text-base" placeholder="Example: 生氣 | 😡"></textarea>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <button id="export-button" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition duration-200"></button>
+                <button id="import-button" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition duration-200"></button>
+                <input type="file" id="import-file-input" accept=".json,application/json" class="hidden">
+            </div>
             <div class="mt-4 flex justify-end space-x-3">
                 <button id="save-button" class="px-5 py-2 text-white font-semibold rounded-xl transition duration-200"></button>
                 <button id="cancel-button" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition duration-200"></button>
@@ -184,6 +197,7 @@
             <div id="share-options" class="space-y-3">
                 <!-- Share Option Buttons will be injected here -->
             </div>
+            <p id="share-mobile-hint" class="hidden mt-4 text-sm text-gray-500"></p>
             <div class="mt-6">
                 <button id="close-share-modal-button" class="w-full px-5 py-2 text-white font-semibold rounded-xl transition duration-200 bg-gray-400 hover:bg-gray-500"></button>
             </div>
@@ -199,6 +213,7 @@
         const FONT_SIZE_KEY = 'flashcardFontSize'; 
         const LANG_KEY = 'flashcardLanguage';
         const THEME_KEY = 'flashcardTheme';
+        const REVIEW_KEY = 'flashcardReviewMarks';
         const CARD_TRANSITION_TIME_MS = 650;
         
         // Font size control constants
@@ -210,11 +225,12 @@
         
         let cards = [];
         let shuffledIndices = [];
+        let reviewMarks = {}; // actual card index -> 'knew' | 'missed', for this review round
         let currentCardIndex = -1; // -1 means launch/idle state
         let isFlipped = false;
         let currentTermFontSize = BASE_FONT_SIZE_PX; 
         
-        let currentLanguage = 'zh-TW'; // 'en' or 'zh-TW'
+        let currentLanguage = 'en'; // 'en' or 'zh-TW'
         let currentTheme = 'pro'; // 'pro', 'kid', 'dark', 'bw', or 'rainbow'
         const THEME_CYCLE = ['pro', 'kid', 'dark', 'bw', 'rainbow'];
 
@@ -263,7 +279,16 @@
                 'share-sms': 'Share via SMS',
                 'share-facebook': 'Share via Facebook',
                 'share-telegram': 'Share via Telegram',
-                'button-close': 'Close'
+                'button-close': 'Close',
+                'button-start-over': 'Start Over',
+                'button-knew': '✓ I knew it',
+                'button-missed': "✗ Didn't know",
+                'button-export': 'Export deck (.json)',
+                'button-import': 'Import deck (.json)',
+                'completion-stats': 'You knew {knew} of {total} cards.',
+                'share-mobile-only': 'WhatsApp, Signal and SMS sharing open on your phone — copy the link here instead.',
+                'msg-import-success': 'Imported {count} cards.',
+                'msg-import-fail': 'Could not import that file. Check it is a flashcards JSON file.'
             },
             'zh-TW': {
                 'title': '簡單認字卡 📚',
@@ -298,7 +323,16 @@
                 'share-sms': '透過 SMS 分享',
                 'share-facebook': '透過 Facebook 分享',
                 'share-telegram': '透過 Telegram 分享',
-                'button-close': '關閉'
+                'button-close': '關閉',
+                'button-start-over': '重新開始',
+                'button-knew': '✓ 我會了',
+                'button-missed': '✗ 還不會',
+                'button-export': '匯出卡片 (.json)',
+                'button-import': '匯入卡片 (.json)',
+                'completion-stats': '你答對了 {knew} 張，共 {total} 張。',
+                'share-mobile-only': 'WhatsApp、Signal 和 SMS 分享請在手機上使用 — 在這裡複製連結即可。',
+                'msg-import-success': '已匯入 {count} 張卡片。',
+                'msg-import-fail': '無法匯入此檔案，請確認它是認字卡 JSON 檔案。'
             }
         };
 
@@ -395,6 +429,14 @@
         const saveButton = document.getElementById('save-button');
         const cancelButton = document.getElementById('cancel-button');
         const controls = document.getElementById('controls');
+        const reviewControls = document.getElementById('review-controls');
+        const knewButton = document.getElementById('knew-button');
+        const missedButton = document.getElementById('missed-button');
+        const completionStats = document.getElementById('completion-stats');
+        const exportButton = document.getElementById('export-button');
+        const importButton = document.getElementById('import-button');
+        const importFileInput = document.getElementById('import-file-input');
+        const shareMobileHint = document.getElementById('share-mobile-hint');
         
         // --- Sharing Modal Elements ---
         const shareModal = document.getElementById('share-modal');
@@ -403,15 +445,40 @@
         const closeShareModalButton = document.getElementById('close-share-modal-button');
 
 
+        // --- SAFE STORAGE ---
+        // localStorage throws in private mode and sandboxed / opaque origins.
+        // An unguarded read at startup would kill the whole app before it
+        // renders, so every access goes through these helpers: the app
+        // always starts, it just doesn't persist without storage.
+        function safeGet(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function safeSet(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) { /* no storage — keep going without saving */ }
+        }
+
         // --- LANGUAGE & THEME FUNCTIONS ---
+
+        function countMarks() {
+            let knew = 0, missed = 0;
+            Object.values(reviewMarks).forEach(v => { if (v === 'knew') knew++; else if (v === 'missed') missed++; });
+            return { knew, missed };
+        }
+
+        function reviewProgressText() {
+            const lang = currentLanguage;
+            let text = `${translations[lang]['progress-indicator-card']} ${currentCardIndex + 1} ${translations[lang]['progress-indicator-of']} ${shuffledIndices.length}`;
+            const { knew, missed } = countMarks();
+            if (knew + missed > 0) text += ` · ✓ ${knew} · ✗ ${missed}`;
+            return text;
+        }
 
         /**
          * Helper to update the progress indicator text based on current language and state.
          */
         function updateProgressIndicator() {
-            const lang = currentLanguage;
-            if (currentCardIndex > -1 && currentCardIndex < cards.length) {
-                progressIndicator.textContent = `${translations[lang]['progress-indicator-card']} ${currentCardIndex + 1} ${translations[lang]['progress-indicator-of']} ${cards.length}`;
+            if (currentCardIndex > -1 && currentCardIndex < shuffledIndices.length) {
+                progressIndicator.textContent = reviewProgressText();
             } else {
                 // Hide if not in review mode
                 progressIndicator.classList.add('opacity-0');
@@ -434,7 +501,11 @@
             completionTitle.textContent = translations[lang]['completion-title'];
             completionText.textContent = translations[lang]['completion-text'];
             tryAgainButton.textContent = translations[lang]['button-try-again'];
-            startOverButton.textContent = translations[lang]['button-edit']; // Start Over button acts as Edit
+            startOverButton.textContent = translations[lang]['button-start-over'];
+            knewButton.textContent = translations[lang]['button-knew'];
+            missedButton.textContent = translations[lang]['button-missed'];
+            exportButton.textContent = translations[lang]['button-export'];
+            importButton.textContent = translations[lang]['button-import'];
             
             // Edit Modal
             modalTitle.textContent = translations[lang]['modal-title'];
@@ -444,6 +515,7 @@
             
             // Share Modal
             closeShareModalButton.textContent = translations[lang]['button-close'];
+            shareMobileHint.textContent = translations[lang]['share-mobile-only'];
 
             // Update Language Toggle text
             languageToggleButton.textContent = lang === 'en' ? '中/En' : 'En/中';
@@ -458,7 +530,7 @@
         
         function toggleLanguage() {
             currentLanguage = currentLanguage === 'en' ? 'zh-TW' : 'en';
-            localStorage.setItem(LANG_KEY, currentLanguage);
+            safeSet(LANG_KEY, currentLanguage);
             updateLanguage();
         }
 
@@ -511,7 +583,7 @@
             const currentIndex = THEME_CYCLE.indexOf(currentTheme);
             const nextIndex = (currentIndex + 1) % THEME_CYCLE.length;
             currentTheme = THEME_CYCLE[nextIndex];
-            localStorage.setItem(THEME_KEY, currentTheme);
+            safeSet(THEME_KEY, currentTheme);
             applyTheme(currentTheme);
         }
 
@@ -521,11 +593,15 @@
          * Converts a string to Base64 using a UTF-8 safe pipeline.
          */
         function utf8_to_b64(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+            const b64 = btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
                 function(match, p1) {
                     return String.fromCharCode('0x' + p1);
                 })
             );
+            // URL-safe base64: '+' and '/' break when a link is pasted into
+            // chats that don't percent-encode them, so use '-'/'_' and drop
+            // the '=' padding (re-added when decoding).
+            return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
         /**
@@ -533,7 +609,12 @@
          */
         function b64_to_utf8(str) {
             try {
-                 return decodeURIComponent(atob(str).split('').map(function(c) {
+                // Accept new URL-safe links and old plain-base64 links:
+                // plain base64 never contains '-' or '_', so converting
+                // them back is a no-op for old links.
+                let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4) b64 += '=';
+                return decodeURIComponent(atob(b64).split('').map(function(c) {
                     return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
                 }).join(''));
             } catch(e) {
@@ -616,11 +697,13 @@
         // --- STORAGE AND INITIALIZATION ---
 
         function loadInitialState() {
-            // Load Language - Default to 'zh-TW' if no storage found (User Request)
-            currentLanguage = localStorage.getItem(LANG_KEY) || 'zh-TW';
-            
+            // Load Language - default to English on first visit; a saved
+            // choice is always respected afterwards.
+            currentLanguage = safeGet(LANG_KEY) || 'en';
+            if (currentLanguage !== 'en' && currentLanguage !== 'zh-TW') currentLanguage = 'en';
+
             // Load Theme
-            const storedTheme = localStorage.getItem(THEME_KEY);
+            const storedTheme = safeGet(THEME_KEY);
             currentTheme = (storedTheme && THEME_CYCLE.includes(storedTheme)) ? storedTheme : 'pro';
             
             applyTheme(currentTheme);
@@ -629,7 +712,7 @@
             // Load Cards (URL has highest priority)
             if (!loadCardsFromUrl()) {
                 try {
-                    const storedCards = localStorage.getItem(STORAGE_KEY);
+                    const storedCards = safeGet(STORAGE_KEY);
                     cards = storedCards ? JSON.parse(storedCards) : DEFAULT_CARDS;
                     if (!Array.isArray(cards) || cards.length === 0) {
                         cards = DEFAULT_CARDS;
@@ -642,10 +725,18 @@
         }
         
         function saveCards() {
+            safeSet(STORAGE_KEY, JSON.stringify(cards));
+        }
+
+        function saveReviewMarks() {
+            safeSet(REVIEW_KEY, JSON.stringify(reviewMarks));
+        }
+
+        function loadReviewMarks() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-            } catch (error) {
-                console.error('Error saving cards to localStorage:', error);
+                reviewMarks = JSON.parse(safeGet(REVIEW_KEY)) || {};
+            } catch (e) {
+                reviewMarks = {};
             }
         }
 
@@ -653,7 +744,7 @@
 
         function loadFontSize() {
             try {
-                const storedSize = localStorage.getItem(FONT_SIZE_KEY);
+                const storedSize = safeGet(FONT_SIZE_KEY);
                 currentTermFontSize = storedSize ? parseInt(storedSize) : BASE_FONT_SIZE_PX;
             } catch (e) {
                 console.error('Could not load font size, using default.', e);
@@ -673,7 +764,7 @@
             flashcardBackP.style.fontSize = `${definitionSize}px`;
 
             // Save for persistence
-            localStorage.setItem(FONT_SIZE_KEY, currentTermFontSize);
+            safeSet(FONT_SIZE_KEY, currentTermFontSize);
             
             // Update button states (disable/style when limits are reached)
             fontSmallerButton.disabled = currentTermFontSize <= MIN_FONT_SIZE_PX;
@@ -696,13 +787,16 @@
         /**
          * The Fisher-Yates (Knuth) Shuffle algorithm.
          */
-        function shuffle(length) {
-            const indices = Array.from({ length }, (_, i) => i);
-            for (let i = length - 1; i > 0; i--) {
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [indices[i], indices[j]] = [indices[j], indices[i]];
+                [arr[i], arr[j]] = [arr[j], arr[i]];
             }
-            return indices;
+            return arr;
+        }
+
+        function shuffle(length) {
+            return shuffleArray(Array.from({ length }, (_, i) => i));
         }
 
         // --- GAME LOGIC ---
@@ -724,6 +818,7 @@
             shareModal.classList.add('hidden');
             appContainer.classList.remove('hidden');
             controls.classList.remove('hidden');
+            reviewControls.classList.add('hidden');
             progressIndicator.classList.add('opacity-0');
             
             // Only set card content if we are in the launch state ---
@@ -739,7 +834,7 @@
             }
         }
 
-        function startReview() {
+        function startReview(indices) {
             const lang = currentLanguage;
 
             if (cards.length === 0) {
@@ -750,8 +845,14 @@
                 return;
             }
 
-            // Reset state
-            shuffledIndices = shuffle(cards.length);
+            // Reset state — a fresh round starts with a clean score sheet.
+            // `indices` optionally limits the round to a subset (e.g. only
+            // the cards marked "didn't know" last round).
+            shuffledIndices = indices && indices.length
+                ? shuffleArray(indices.slice())
+                : shuffle(cards.length);
+            reviewMarks = {};
+            saveReviewMarks();
             currentCardIndex = 0;
             isFlipped = false;
 
@@ -759,6 +860,7 @@
             completionScreen.classList.add('hidden');
             appContainer.classList.remove('hidden');
             controls.classList.add('hidden');
+            reviewControls.classList.remove('hidden');
             progressIndicator.classList.remove('opacity-0');
 
             // Show first card
@@ -786,8 +888,7 @@
             }, CARD_TRANSITION_TIME_MS); 
 
             // Update progress
-            const lang = currentLanguage;
-            progressIndicator.textContent = `${translations[lang]['progress-indicator-card']} ${currentCardIndex + 1} ${translations[lang]['progress-indicator-of']} ${cards.length}`;
+            progressIndicator.textContent = reviewProgressText();
             progressIndicator.classList.remove('text-red-500');
             progressIndicator.classList.add('text-gray-500');
         }
@@ -809,7 +910,7 @@
             } else {
                 // 2. Advance to the next card
                 currentCardIndex++;
-                if (currentCardIndex < cards.length) {
+                if (currentCardIndex < shuffledIndices.length) {
                     // Show next card
                     displayCurrentCard();
                 } else {
@@ -824,8 +925,29 @@
          */
         function showCompletionScreen() {
             appContainer.classList.add('hidden');
+            reviewControls.classList.add('hidden');
             completionScreen.classList.remove('hidden');
+            const { knew } = countMarks();
+            completionStats.textContent = translations[currentLanguage]['completion-stats']
+                .replace('{knew}', knew)
+                .replace('{total}', shuffledIndices.length);
             currentCardIndex = -1; // Indicate game over
+        }
+
+        /**
+         * Marks the current card as known / not known, then moves on —
+         * the same advance as clicking a flipped card.
+         */
+        function markCurrentCard(result) {
+            if (currentCardIndex < 0 || currentCardIndex >= shuffledIndices.length) return;
+            reviewMarks[shuffledIndices[currentCardIndex]] = result;
+            saveReviewMarks();
+            currentCardIndex++;
+            if (currentCardIndex < shuffledIndices.length) {
+                displayCurrentCard();
+            } else {
+                showCompletionScreen();
+            }
         }
         
         /**
@@ -870,14 +992,18 @@
 
             shareModalTitle.textContent = translations[lang]['share-modal-title'];
 
-            // Define sharing platforms and their configurations
+            // Define sharing platforms and their configurations.
+            // App-scheme links (signal://, sms:) do nothing on a desktop
+            // without those apps, so they are only offered on phones/tablets.
+            // WhatsApp uses its https share URL, which works everywhere.
+            const isMobileShare = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
             const platforms = [
-                // Icon, Name, URL scheme, Tailwind Color classes
-                { icon: '📱', name: 'WhatsApp', url: `whatsapp://send?text=${encodeURIComponent(message)}`, color: 'bg-green-500 hover:bg-green-600' },
+                // Icon, Name, URL, Tailwind Color classes, mobileOnly?
+                { icon: '📱', name: 'WhatsApp', url: `https://wa.me/?text=${encodeURIComponent(message)}`, color: 'bg-green-500 hover:bg-green-600' },
                 { icon: '✈️', name: 'Telegram', url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(translations[lang]['share-message'].trim())}`, color: 'bg-sky-400 hover:bg-sky-500' },
                 { icon: '📘', name: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, color: 'bg-blue-700 hover:bg-blue-800' },
-                { icon: '🔒', name: 'Signal', url: `signal://send?text=${encodeURIComponent(message)}`, color: 'bg-blue-600 hover:bg-blue-700' },
-                { icon: '✉️', name: 'SMS', url: `sms:?body=${encodeURIComponent(message)}`, color: 'bg-gray-700 hover:bg-gray-800' }
+                { icon: '🔒', name: 'Signal', url: `signal://send?text=${encodeURIComponent(message)}`, color: 'bg-blue-600 hover:bg-blue-700', mobileOnly: true },
+                { icon: '✉️', name: 'SMS', url: `sms:?body=${encodeURIComponent(message)}`, color: 'bg-gray-700 hover:bg-gray-800', mobileOnly: true }
             ];
 
             shareOptions.innerHTML = ''; // Clear previous options
@@ -893,8 +1019,10 @@
             });
             shareOptions.appendChild(copyBtn);
 
-            // 2. Add platform sharing links
+            // 2. Add platform sharing links (skip app-only ones on desktop)
+            let hiddenMobileOnly = false;
             platforms.forEach(platform => {
+                if (platform.mobileOnly && !isMobileShare) { hiddenMobileOnly = true; return; }
                 const link = document.createElement('a');
                 link.href = platform.url;
                 link.target = '_blank'; // Open in a new tab/app
@@ -904,6 +1032,9 @@
                 link.innerHTML = `${platform.icon} <span class="ml-2">${translations[lang][`share-${platform.name.toLowerCase()}`]}</span>`;
                 shareOptions.appendChild(link);
             });
+
+            // On desktop, explain why Signal/SMS aren't listed.
+            shareMobileHint.classList.toggle('hidden', !hiddenMobileOnly);
 
             shareModal.classList.remove('hidden');
         }
@@ -984,6 +1115,10 @@
             if (newCards.length > 0) {
                 cards = newCards;
                 saveCards();
+                // Card order/contents changed, so old per-card marks no
+                // longer point at the same cards.
+                reviewMarks = {};
+                saveReviewMarks();
                 closeEditModal();
                 
                 // Reset to launch state and show confirmation message
@@ -1001,6 +1136,70 @@
         }
 
 
+        // --- DECK EXPORT / IMPORT (JSON file) ---
+
+        function exportDeck() {
+            const lang = currentLanguage;
+            if (cards.length === 0) {
+                displayMessage(translations[lang]['err-empty-cards'], true);
+                return;
+            }
+            const blob = new Blob([JSON.stringify(cards, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'flashcards.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        /**
+         * Accepts the two shapes we produce: [{term, definition}] and
+         * ["Term | Definition", ...]. Reuses the same line parsing as the
+         * editor so pasted and imported cards behave the same.
+         */
+        function parseImportedCards(parsed) {
+            if (!Array.isArray(parsed)) return [];
+            const imported = [];
+            parsed.forEach(entry => {
+                if (typeof entry === 'string') {
+                    const parts = entry.split(/\|(.*)/s).map(p => p.trim());
+                    if (parts.length >= 2 && parts[0]) imported.push({ term: parts[0], definition: parts[1] || '' });
+                } else if (entry && typeof entry.term === 'string' && entry.term.trim()) {
+                    imported.push({ term: entry.term.trim(), definition: typeof entry.definition === 'string' ? entry.definition.trim() : '' });
+                }
+            });
+            return imported;
+        }
+
+        function importDeckFile(file) {
+            const lang = currentLanguage;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const imported = parseImportedCards(JSON.parse(reader.result));
+                    if (imported.length === 0) throw new Error('No valid cards in file');
+                    cards = imported;
+                    saveCards();
+                    reviewMarks = {};
+                    saveReviewMarks();
+                    closeEditModal();
+                    resetToLaunchState();
+                    displayMessage(
+                        translations[lang]['msg-import-success'].replace('{count}', imported.length),
+                        false
+                    );
+                } catch (e) {
+                    console.error('Failed to import deck:', e);
+                    displayMessage(translations[lang]['msg-import-fail'], true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+
         // --- EVENT LISTENERS ---
 
         // Home button returns to launch state
@@ -1015,16 +1214,32 @@
         fontLargerButton.addEventListener('click', increaseFontSize);
 
         // Start/Try Again buttons
-        startButton.addEventListener('click', startReview);
-        tryAgainButton.addEventListener('click', startReview);
-        
-        // Edit Cards buttons (main page and completion page)
+        startButton.addEventListener('click', () => startReview());
+        // Try Again re-reviews just the cards marked "didn't know";
+        // with nothing missed (or nothing marked) it reviews the full deck.
+        tryAgainButton.addEventListener('click', () => {
+            const missed = Object.keys(reviewMarks)
+                .filter(k => reviewMarks[k] === 'missed')
+                .map(Number);
+            startReview(missed.length ? missed : null);
+        });
+
+        // Start Over restarts the whole deck from the beginning.
+        startOverButton.addEventListener('click', () => startReview());
+
+        // Edit Cards button (main page)
         editButton.addEventListener('click', openEditModal);
-        startOverButton.addEventListener('click', () => { // "Edit Cards" on completion screen
-            completionScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            controls.classList.remove('hidden');
-            openEditModal();
+
+        // Knew / didn't-know buttons (shown only while reviewing)
+        knewButton.addEventListener('click', () => markCurrentCard('knew'));
+        missedButton.addEventListener('click', () => markCurrentCard('missed'));
+
+        // Deck export / import (in the edit modal)
+        exportButton.addEventListener('click', exportDeck);
+        importButton.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', () => {
+            if (importFileInput.files.length) importDeckFile(importFileInput.files[0]);
+            importFileInput.value = ''; // allow choosing the same file again
         });
 
         // Share Button (Now opens the modal)
@@ -1039,10 +1254,49 @@
         cancelButton.addEventListener('click', closeEditModal);
         saveButton.addEventListener('click', handleSaveCards);
 
+        // Keyboard: Space / Enter / ArrowRight flip or advance, ArrowLeft
+        // goes back, Esc closes a modal. Ignored while typing, and
+        // Space/Enter are left alone when a button has focus (they
+        // activate the button natively).
+        document.addEventListener('keydown', (e) => {
+            const target = e.target;
+            const typing = target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.isContentEditable);
+            if (typing) return;
+            const modalOpen = !editModal.classList.contains('hidden') || !shareModal.classList.contains('hidden');
+            if (e.key === 'Escape') {
+                if (modalOpen) { closeEditModal(); closeShareModal(); }
+                return;
+            }
+            if (modalOpen) return;
+            const onButton = target && (target.tagName === 'BUTTON' || target.tagName === 'A');
+            if (onButton && (e.key === ' ' || e.key === 'Enter')) return; // let the button handle it
+            if (currentCardIndex === -1) {
+                if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    startReview();
+                }
+                return;
+            }
+            if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                handleCardClick();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (isFlipped) {
+                    flashcardWrapper.classList.remove('flipped');
+                    isFlipped = false;
+                } else if (currentCardIndex > 0) {
+                    currentCardIndex--;
+                    displayCurrentCard();
+                }
+            }
+        });
+
 
         // --- INITIAL SETUP ---
         document.addEventListener('DOMContentLoaded', () => {
             loadInitialState();
+            loadReviewMarks();
             loadFontSize(); // Load and apply font size preference
             resetToLaunchState(); // Ensure the app starts in the correct state
         });
