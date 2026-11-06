@@ -1290,18 +1290,21 @@
         saveButton.addEventListener('click', handleSaveCards);
 
         // Keyboard: Space / Enter / ArrowRight flip or advance, ArrowLeft
-        // goes back, Esc closes a modal. Ignored while typing, and
-        // Space/Enter are left alone when a button has focus (they
-        // activate the button natively).
+        // goes back, Esc closes a modal. Ignored while typing (except Esc,
+        // which must still close a modal), and Space/Enter are left alone
+        // when a button has focus (they activate the button natively).
         document.addEventListener('keydown', (e) => {
             const target = e.target;
-            const typing = target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.isContentEditable);
-            if (typing) return;
             const modalOpen = !editModal.classList.contains('hidden') || !shareModal.classList.contains('hidden');
+            // Escape is exempt from the typing guard below: it must close an
+            // open modal even while the editor textarea has focus. With no
+            // modal open it does nothing.
             if (e.key === 'Escape') {
                 if (modalOpen) { closeEditModal(); closeShareModal(); }
                 return;
             }
+            const typing = target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.isContentEditable);
+            if (typing) return;
             if (modalOpen) return;
             const onButton = target && (target.tagName === 'BUTTON' || target.tagName === 'A');
             if (onButton && (e.key === ' ' || e.key === 'Enter')) return; // let the button handle it
