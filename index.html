@@ -626,15 +626,19 @@
 
         /**
          * Converts the current cards array into a Base64-encoded URL-safe string.
+         * Encoded as JSON objects, not "term|definition" strings: a term or
+         * definition containing "|" would otherwise be split apart on decode.
          */
         function encodeCards(cards) {
-            const cardStrings = cards.map(c => `${c.term}|${c.definition}`);
-            const jsonString = JSON.stringify(cardStrings);
+            const jsonString = JSON.stringify(cards.map(c => ({ term: c.term, definition: c.definition })));
             return utf8_to_b64(jsonString); 
         }
 
         /**
          * Decodes a Base64 string from the URL back into a cards array.
+         * Accepts the new object shape [{term, definition}] and the legacy
+         * pipe-string shape ["term | definition"], plus legacy plain base64
+         * (handled by b64_to_utf8), so old shared links keep working.
          */
         function decodeCards(encodedData) {
             try {
@@ -642,14 +646,26 @@
                 const jsonString = b64_to_utf8(encodedData);
                 if (!jsonString) return [];
                 
-                const cardStrings = JSON.parse(jsonString);
+                const parsed = JSON.parse(jsonString);
+                if (!Array.isArray(parsed)) return [];
                 
                 const decodedCards = [];
-                cardStrings.forEach(line => {
-                    // Split only on the first pipe
-                    const parts = line.split(/\|(.*)/s).map(p => p.trim());
-                    if (parts.length >= 2 && parts[0]) { 
-                        decodedCards.push({ term: parts[0], definition: parts[1] || '' });
+                parsed.forEach(entry => {
+                    if (entry && typeof entry === 'object' && typeof entry.term === 'string') {
+                        // New shape: JSON objects, so "|" in terms and
+                        // definitions survives the round trip.
+                        if (entry.term.trim()) {
+                            decodedCards.push({ term: entry.term.trim(), definition: typeof entry.definition === 'string' ? entry.definition.trim() : '' });
+                        }
+                    } else if (typeof entry === 'string') {
+                        // Legacy shape: "term | definition" strings, split
+                        // on the first pipe. (A "|" inside a legacy term was
+                        // already lost when that link was shared, so those
+                        // links decode exactly as they did before.)
+                        const parts = entry.split(/\|(.*)/s).map(p => p.trim());
+                        if (parts.length >= 2 && parts[0]) { 
+                            decodedCards.push({ term: parts[0], definition: parts[1] || '' });
+                        }
                     }
                 });
                 
