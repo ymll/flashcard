@@ -178,6 +178,7 @@
             <h2 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4"></h2>
             <p id="modal-instruction" class="text-sm text-gray-500 mb-4"></p>
             <textarea id="edit-textarea" class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 text-base" placeholder="Example: 生氣 | 😡"></textarea>
+            <p id="edit-error" class="hidden mt-2 text-sm text-red-500"></p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <button id="export-button" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition duration-200"></button>
                 <button id="import-button" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition duration-200"></button>
@@ -426,6 +427,7 @@
         const modalTitle = document.getElementById('modal-title');
         const modalInstruction = document.getElementById('modal-instruction');
         const editTextArea = document.getElementById('edit-textarea');
+        const editError = document.getElementById('edit-error');
         const saveButton = document.getElementById('save-button');
         const cancelButton = document.getElementById('cancel-button');
         const controls = document.getElementById('controls');
@@ -1101,6 +1103,9 @@
         function openEditModal() {
             const textContent = cards.map(c => `${c.term} | ${c.definition}`).join('\n');
             editTextArea.value = textContent;
+            // Clear any error left over from a previous failed import/save.
+            editError.textContent = '';
+            editError.classList.add('hidden');
             editModal.classList.remove('hidden');
         }
 
@@ -1108,6 +1113,8 @@
          * Closes the editing modal.
          */
         function closeEditModal() {
+            editError.textContent = '';
+            editError.classList.add('hidden');
             editModal.classList.add('hidden');
         }
 
@@ -1152,7 +1159,10 @@
                 }
 
             } else {
-                displayMessage(translations[lang]['err-min-cards'], true);
+                // The modal is still open, so the error must be shown inside
+                // it — the main page's progress indicator is hidden behind it.
+                editError.textContent = translations[lang]['err-min-cards'];
+                editError.classList.remove('hidden');
             }
         }
 
@@ -1214,7 +1224,11 @@
                     );
                 } catch (e) {
                     console.error('Failed to import deck:', e);
-                    displayMessage(translations[lang]['msg-import-fail'], true);
+                    // Show the failure inside the edit modal, which stays
+                    // open with the textarea untouched so the user can retry.
+                    // (displayMessage writes behind the modal and is invisible.)
+                    editError.textContent = translations[lang]['msg-import-fail'];
+                    editError.classList.remove('hidden');
                 }
             };
             reader.readAsText(file);
